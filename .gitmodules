@@ -1,0 +1,9 @@
+[submodule "externals/live555-CMake"]
+	path = externals/live555-CMake
+	url = git://github.com/miseri/live555-CMake.git
+[submodule "externals/cpp-util"]
+	path = externals/cpp-util
+	url = git://github.com/miseri/cpp-util.git
+[submodule "externals/glog"]
+	path = externals/glog
+	url = git://github.com/miseri/glog.git
