@@ -34,3 +34,11 @@ Icon
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+
+# VS files
+*.sdf
+*.obj
+externals/
+Projects-vs2013/
+bin/
+lib/
