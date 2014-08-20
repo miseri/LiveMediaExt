@@ -3,7 +3,7 @@
 #include <string>
 #include "FramedSource.hh"
 #include "RTPSink.hh"
-// #include <artist/Media/MediaSample.h>
+#include <Media/MediaSample.h>
 
 const int DIRECT_SHOW_TOLIVE_TIME_FACTOR = 10;
 
@@ -12,7 +12,7 @@ namespace lme
 
 class IMediaSampleBuffer;
 class IFrameGrabber;
-class RtvcLiveMediaSubsession;
+class LiveMediaSubsession;
 class LiveRtvcRtpSink;
 
 /**
@@ -35,7 +35,7 @@ public:
   /**
    * @brief Named constructor
    */
-  static LiveDeviceSource* createNew(UsageEnvironment& env, unsigned uiClientId/*, RtvcLiveMediaSubsession* pParent, IMediaSampleBuffer* pSampleBuffer*/);
+  static LiveDeviceSource* createNew(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, IMediaSampleBuffer* pSampleBuffer);
   /**
    * @brief Destructor
    */
@@ -58,16 +58,16 @@ public:
   /// returns true if a frame is retrieved from the buffer
 	virtual bool retrieveMediaSampleFromBuffer();
 
- // RTPSink* getRTPSink() { return m_pSink; }
- // void setRTPSink(RTPSink* pSink) { m_pSink = pSink; }
+  // RTPSink* getRTPSink() { return m_pSink; }
+  // void setRTPSink(RTPSink* pSink) { m_pSink = pSink; }
 
- // bool isPlaying() const { return m_bIsPlaying; }
+  bool isPlaying() const { return m_bIsPlaying; }
 
  // // HACK: method that should show if the device source was updated. Used for notification
  // bool sourceUpdateOccurred() const { return m_bSourceUpdateOccurred; }
 
 protected:
-  LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId/*, RtvcLiveMediaSubsession* pParent, IFrameGrabber* pFrameGrabber*/);
+  LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, IFrameGrabber* pFrameGrabber);
 
   // redefined virtual functions:
   virtual void doGetNextFrame();
@@ -79,11 +79,10 @@ protected:
   /// unique client id
   unsigned m_uiClientId;
 
-// // RtvcLiveMediaSubsession* m_pParentSubsession;
-//	//IFrameGrabber* m_pFrameGrabber;
-//
-//	// queue for outgoing samples
-//	//std::queue<MediaSampleEx2*> m_qMediaSamples;
+  LiveMediaSubsession* m_pParentSubsession;
+  IFrameGrabber* m_pFrameGrabber;
+	// queue for outgoing samples
+	std::queue<MediaSample> m_qMediaSamples;
 //
 //	/// Related RTP Sink
 //	//LiveRtvcRtpSink* m_pSink;
@@ -96,12 +95,12 @@ protected:
 //  bool m_bSourceUpdateOccurred;
 //
 //private:
-//	/// Start time offsets
-//	bool m_bOffsetSet;
-//	struct timeval m_tOffsetTime;
-//	double m_dOffsetTime;
-//
-//  bool m_bIsPlaying;
+	/// Start time offsets
+	bool m_bOffsetSet;
+	struct timeval m_tOffsetTime;
+	double m_dOffsetTime;
+
+  bool m_bIsPlaying;
 };
 
 } // lme

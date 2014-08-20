@@ -10,6 +10,27 @@
 #include <WinSock2.h>
 #endif
 
+// messaging in compilation output
+#ifdef _WIN32
+#include <Windows.h>
+// From Richter's "Windows via c++"
+/*
+When the compiler sees a line like this:
+#pragma chMSG(Fix this later)
+
+it outputs a line like this:
+
+c:\CD\CmnHdr.h(82):Fix this later
+
+You can easily jump directly to this line and examine the surrounding code.
+*/
+#define chSTR2(x) #x
+#define chSTR(x)  chSTR2(x)
+#define chMSG(desc) message(__FILE__ "(" chSTR(__LINE__) "):" #desc)
+#else
+#define chMSG(desc) ""
+#endif
+
 #ifdef _WIN32
 #pragma warning(push)     // disable for this header only
 #pragma warning(disable:4251) 

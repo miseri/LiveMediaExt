@@ -4,7 +4,7 @@
 #include <cpputil/ConsoleApplicationUtil.h>
 #include <cpputil/GenericParameters.h>
 #include <cpputil/ServiceManager.h>
-#include <Media/PacketManagerMediaChannel.h>
+#include <Media/SingleChannelManager.h>
 #include <Media/RtspService.h>
 #include <Media/VirtualMediaSource.h>
 
@@ -36,10 +36,13 @@ int main(int argc, char** argv)
 
   // Create a channel to bridge from the virtual capture device to the RTSP service
   uint32_t uiChannelId = 12345;
-  PacketManagerMediaChannel channel(uiChannelId);
+  uint32_t uiVideoId = 0;
+  uint32_t uiAudioId = 1;
+  SingleChannelManager channelManager(uiChannelId, uiVideoId, uiAudioId);
+  PacketManagerMediaChannel& packetManager = channelManager.getPacketManager();
 
   // create source thread to simulate live capture
-  VirtualMediaSource virtualSource(serviceManager.getIoService(), boost::bind(&PacketManagerMediaChannel::addVideoMediaSamples, boost::ref(channel), _1), 40, 1000);
+  VirtualMediaSource virtualSource(serviceManager.getIoService(), boost::bind(&PacketManagerMediaChannel::addVideoMediaSamples, boost::ref(packetManager), _1), 40, 1000);
   RtspService rtspService;
 
   // register media session with manager

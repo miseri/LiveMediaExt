@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <cpputil/Buffer.h>
 
 namespace lme
@@ -6,6 +7,9 @@ namespace lme
 
 /**
  * @brief The MediaSample contains the data as well as timestamp information.
+ *
+ * The channel and source ids can be used to identify the media sample as belonging 
+ * to a specific channel and source (e.g. audio/video) respectively.
  */
 class MediaSample
 {
@@ -47,12 +51,31 @@ public:
    * @brief Setter for media data
    */
   void setData(Buffer data) { m_data = data; }
-
+  /**
+   * @brief Getter for channel id
+   */
+  uint32_t getChannelId() const { return m_uiChannelId; }
+  /**
+   * @brief Setter for channel id
+   */
+  void setChannelId(uint32_t uiChannelId) { m_uiChannelId = uiChannelId;  }
+  /**
+   * @brief Getter for source id
+   */
+  uint32_t getSourceId() const { return m_uiSourceId; }
+  /**
+   * @brief Setter for source id
+   */
+  void setSourceId(uint32_t uiSourceId) { m_uiSourceId = uiSourceId;  }
 private:
   /// Presentation time of media sample
   double m_dPresentationTime;
   /// media data
   Buffer m_data;
+  /// channel id
+  uint32_t m_uiChannelId;
+  /// source id
+  uint32_t m_uiSourceId;
 };
 
 } // lme
