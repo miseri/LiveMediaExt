@@ -7,6 +7,7 @@
 #include <RTSPServer.hh>
 #endif
 #include <Media/AudioChannelDescriptor.h>
+#include <Media/ChannelManager.h>
 #include <Media/VideoChannelDescriptor.h>
 
 // fwd
@@ -31,7 +32,7 @@ public:
   /**
    * @brief Constructor
    */
-  RtspService();
+  RtspService(ChannelManager& channelManager);
   /**
    * @brief starts periodic generation of media samples
    */
@@ -54,6 +55,14 @@ public:
   boost::system::error_code removeChannel(uint32_t uiChannelId);
 
 private:
+  void live555EventLoop();
+  void cleanupLiveMediaEnvironment();
+  static void checkSessionsTask(void* clientData);
+  void doCheckSessionsTask();
+private:
+
+  /// Channel manager
+  ChannelManager& m_channelManager;
   /// condition variable to control event loop lifetime
   char m_cEventloop;
   /// live555 RTSP server
@@ -64,6 +73,10 @@ private:
   BasicUsageEnvironment* m_pEnv;
   /// live thread
   std::unique_ptr<boost::thread> m_pLive555Thread;
+  /// flag for event loop status
+  bool m_bEventLoopRunning;
+  /// live555 tasks
+  TaskToken m_pCheckSessionsTask;
 };
 
 } // lme
