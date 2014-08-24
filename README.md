@@ -13,6 +13,6 @@ BOOST_INCLUDE_DIR: boost include directory.
 BOOST_LIB_DIR: directory where compiled .lib files can be found.
 
 The external can be checked out using the following command:
-git submodule add git://github.com/miseri/live555-CMake.git externals/live555-CMake
-git submodule add git://github.com/miseri/cpp-util.git externals/cpp-util
-git submodule add git://github.com/miseri/glog.git externals/glog
+git submodule add -f git://github.com/miseri/live555-CMake.git externals/live555-CMake
+git submodule add -f git://github.com/miseri/cpp-util.git externals/cpp-util
+git submodule add -f git://github.com/miseri/glog.git externals/glog
