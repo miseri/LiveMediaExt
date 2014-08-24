@@ -19,6 +19,7 @@ RtspService::RtspService(ChannelManager& channelManager)
 
 boost::system::error_code RtspService::start()
 {
+  VLOG(2) << "Starting RTSP service";
   // init live555 environment
   // Setup the liveMedia environment
   m_pScheduler = LiveSourceTaskScheduler::createNew(m_channelManager);
@@ -36,6 +37,7 @@ boost::system::error_code RtspService::start()
 
   // Add task that checks if there's new data in the queue
   checkSessionsTask(this);
+  checkChannelsTask(this);
 
   // start live 555 in new thread
   m_pLive555Thread = std::unique_ptr<boost::thread>(new boost::thread(boost::bind(&RtspService::live555EventLoop, this)));
@@ -44,6 +46,7 @@ boost::system::error_code RtspService::start()
 
 boost::system::error_code RtspService::stop()
 {
+  VLOG(2) << "Stopping RTSP service";
   // stop live555 thread
   if (m_pLive555Thread)
   {
@@ -51,6 +54,7 @@ boost::system::error_code RtspService::stop()
     m_pLive555Thread->join();
   }
 
+  VLOG(2) << "End of RTSP service";
   return boost::system::error_code();
 }
 
@@ -94,37 +98,116 @@ void RtspService::checkSessionsTask(void* clientData)
 }
 
 void RtspService::doCheckSessionsTask()
-{
-  // TODO: add/remove dynamic channels
-  
+{ 
   // TODO: process RTCP reports and update RTCP rate control module
-
-  //  // Remove old sessions:
-//  while (m_qMediaSessionsToBeRemoved.hasItems())
-//  {
-//    std::string sSession = m_qMediaSessionsToBeRemoved.pop();
-//
-//    LOG(INFO) << "Ending RTSP media session: " << sSession;
-//    /// code to kick clients before removing session so that there are no outstanding references
-//#if 1
-//    m_pRtspServer->endServerSession(sSession);
-//#endif
-//
-//    LOG(INFO) << "Removing RTSP media session from RTSP server: " << sSession;
-//    m_pRtspServer->removeTranscoderMediaSession(sSession);
-//  }
-//
-//  // Add new sessions:
-//  while (m_qMediaSessions.hasItems())
-//  {
-//    std::string sSession = m_qMediaSessions.pop();
-//    LOG(INFO) << "Adding RTSP media session to RTSP server: " << sSession;
-//    m_pRtspServer->addTranscoderMediaSession(sSession);
-//  }
-//
+  VLOG(10) << "doCheckSessionsTask";
   // Call this again, after a brief delay:
   int uSecsToDelay = 50000; // 50 ms
   m_pCheckSessionsTask = m_pEnv->taskScheduler().scheduleDelayedTask(uSecsToDelay, (TaskFunc*)&RtspService::checkSessionsTask, this);
+}
+
+void RtspService::checkChannelsTask(void* clientData)
+{
+  RtspService* pRtspService = (RtspService*)clientData;
+  pRtspService->doCheckChannelsTask();
+}
+
+void RtspService::doCheckChannelsTask()
+{
+  boost::mutex::scoped_lock l(m_channelLock);
+  // Remove old sessions:
+  while (!m_qChannelsToBeRemoved.empty())
+  {
+    Channel channel = m_qChannelsToBeRemoved.front();
+    m_qChannelsToBeRemoved.pop_front();
+    assert(m_mChannels.find(channel.ChannelId) != m_mChannels.end());
+    m_mChannels.erase(channel.ChannelId);
+    LOG(INFO) << "Removing RTSP media session from RTSP server - Channel: " << channel.ChannelId << " Name: " << channel.ChannelName;
+    m_pRtspServer->removeRtspMediaSession(channel);
+  }
+
+  // Add new sessions:
+  while (!m_qChannelsToBeAdded.empty())
+  {
+    Channel newChannel = m_qChannelsToBeAdded.front();
+    m_qChannelsToBeAdded.pop_front();
+    m_mChannels[newChannel.ChannelId] = newChannel;
+    LOG(INFO) << "Adding RTSP media session to RTSP server - Channel: " << newChannel.ChannelId << " Name: " << newChannel.ChannelName;
+    m_pRtspServer->addRtspMediaSession(newChannel);
+  }
+
+  // Call this again, after a brief delay:
+  int uSecsToDelay = 50000; // 50 ms
+  m_pCheckSessionsTask = m_pEnv->taskScheduler().scheduleDelayedTask(uSecsToDelay, (TaskFunc*)&RtspService::checkChannelsTask, this);
+}
+
+boost::system::error_code RtspService::createChannel(uint32_t uiChannelId, const std::string& sChannelName, 
+                                                     const VideoChannelDescriptor& videoDescriptor, const AudioChannelDescriptor& audioDescriptor)
+{
+  VLOG(2) << "createChannel: " << uiChannelId;
+  boost::mutex::scoped_lock l(m_channelLock);
+  ChannelMap_t::iterator it = m_mChannels.find(uiChannelId);
+  if (it != m_mChannels.end())
+  {
+    return boost::system::error_code(boost::system::errc::file_exists, boost::system::get_generic_category());
+  }
+  else
+  {
+    m_qChannelsToBeAdded.push_back(Channel(uiChannelId, sChannelName, videoDescriptor, audioDescriptor));
+    return boost::system::error_code();
+  }
+}
+
+boost::system::error_code RtspService::createChannel(uint32_t uiChannelId, const std::string& sChannelName, const VideoChannelDescriptor& videoDescriptor)
+{
+  VLOG(2) << "createChannel: " << uiChannelId;
+  boost::mutex::scoped_lock l(m_channelLock);
+  ChannelMap_t::iterator it = m_mChannels.find(uiChannelId);
+  if (it != m_mChannels.end())
+  {
+    return boost::system::error_code(boost::system::errc::file_exists, boost::system::get_generic_category());
+  }
+  else
+  {
+    m_qChannelsToBeAdded.push_back(Channel(uiChannelId, sChannelName, videoDescriptor));
+    VLOG(2) << "createChannel: " << uiChannelId << " channel added";
+    return boost::system::error_code();
+  }
+  return boost::system::error_code();
+}
+
+boost::system::error_code RtspService::createChannel(uint32_t uiChannelId, const std::string& sChannelName, const AudioChannelDescriptor& audioDescriptor)
+{
+  VLOG(2) << "createChannel: " << uiChannelId;
+  boost::mutex::scoped_lock l(m_channelLock);
+  ChannelMap_t::iterator it = m_mChannels.find(uiChannelId);
+  if (it != m_mChannels.end())
+  {
+    return boost::system::error_code(boost::system::errc::file_exists, boost::system::get_generic_category());
+  }
+  else
+  {
+    m_qChannelsToBeAdded.push_back(Channel(uiChannelId, sChannelName, audioDescriptor));
+    return boost::system::error_code();
+  }
+  return boost::system::error_code();
+}
+
+boost::system::error_code RtspService::removeChannel(uint32_t uiChannelId)
+{
+  VLOG(2) << "removeChannel: " << uiChannelId;
+  boost::mutex::scoped_lock l(m_channelLock);
+  ChannelMap_t::iterator it = m_mChannels.find(uiChannelId);
+  if (it != m_mChannels.end())
+  {
+    m_qChannelsToBeRemoved.push_back(m_mChannels[uiChannelId]);
+    return boost::system::error_code();
+  }
+  else
+  {
+    return boost::system::error_code(boost::system::errc::no_such_file_or_directory, boost::system::get_generic_category());
+  }
+  return boost::system::error_code();
 }
 
 } //lme

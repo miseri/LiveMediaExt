@@ -1,4 +1,5 @@
 #pragma once
+#include <climits>
 #include <Media/ChannelManager.h>
 #include <Media/PacketManagerMediaChannel.h>
 
@@ -17,6 +18,17 @@ public:
   /**
    * @brief Constructor
    */
+  SingleChannelManager(uint32_t uiChannelId)
+    :m_packetManager(uiChannelId),
+    m_uiChannelId(uiChannelId),
+    m_uiVideoSourceId(UINT_MAX),
+    m_uiAudioSourceId(UINT_MAX)
+  {
+
+  }
+  /**
+   * @brief Constructor
+   */
   SingleChannelManager(uint32_t uiChannelId, uint32_t uiVideoSourceId, uint32_t uiAudioSourceId)
     :m_packetManager(uiChannelId),
     m_uiChannelId(uiChannelId),
@@ -24,6 +36,18 @@ public:
     m_uiAudioSourceId(uiAudioSourceId)
   {
 
+  }
+
+  void setVideoSourceId(const uint32_t uiVideoSourceId) 
+  { 
+    assert(uiVideoSourceId != m_uiAudioSourceId);
+    m_uiVideoSourceId = uiVideoSourceId; 
+  }
+
+  void setAudioSourceId(const uint32_t uiAudioSourceId) 
+  {
+    assert(uiAudioSourceId != m_uiVideoSourceId);
+    m_uiAudioSourceId = uiAudioSourceId; 
   }
 
   const PacketManagerMediaChannel& getPacketManager() const { return m_packetManager; }
@@ -44,6 +68,7 @@ public:
     else
     {
       assert(false);
+      return boost::optional<MediaSample>();
     }
   }
 

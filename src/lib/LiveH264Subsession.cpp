@@ -18,7 +18,9 @@ LiveH264Subsession::LiveH264Subsession( UsageEnvironment& env, LiveRtspServer& r
   m_sPps(sPps),
   fAuxSDPLine(NULL),
   fFmtpSDPLine(NULL)
-{;}
+{
+  VLOG(2) << "LiveH264Subsession() SPS: " << m_sSps << " PPS: " << m_sPps;
+}
 
 LiveH264Subsession::~LiveH264Subsession()
 {
@@ -29,22 +31,20 @@ LiveH264Subsession::~LiveH264Subsession()
 LiveDeviceSource* LiveH264Subsession::createSubsessionSpecificSource( unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer )
 {
   // Create standard device source
-  //return LiveDeviceSource::createNew(clientSessionId, envir(), this, pMediaSampleBuffer );
+  //return LiveDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer );
   return LiveH264VideoDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer, m_sSps, m_sPps);
 }
 
 void LiveH264Subsession::setEstimatedBitRate(unsigned& estBitrate)
 {
-	//TODO: get proper bit frame limit exchanged during XMLP describe similar to the way it's done for the multiplexed H263 session
-	//TODONB
-	//TODO: How to get frame rate from transcoder side?
 	// Set estimated session band width
-	estBitrate = 20000/*framebitlimit of codec*/ * 10 /*framerate*/;
+	estBitrate = 1000;
 }
 
 RTPSink* LiveH264Subsession::createNewRTPSink( Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource )
 {
-  H264VideoRTPSink* pSink = H264VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic);
+  std::string sPropParameterSets = m_sSps + "," + m_sPps;
+  H264VideoRTPSink* pSink = H264VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, sPropParameterSets.c_str());
 	// TODO: What packet sizes should be set?!?
 	pSink->setPacketSizes(1400, 10000);
 	return pSink;

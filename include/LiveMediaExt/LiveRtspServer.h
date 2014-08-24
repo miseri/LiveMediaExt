@@ -5,17 +5,57 @@
 #include <map>
 #include <vector>
 #include <BasicUsageEnvironment.hh>
+#include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/thread/mutex.hpp>
+#include <Media/AudioChannelDescriptor.h>
+#include <Media/VideoChannelDescriptor.h>
 
 namespace lme
 {
 
+struct Channel
+{
+  Channel()
+    :ChannelId(0)
+  {
+
+  }
+
+  Channel(uint32_t uiChannelId, const std::string& sChannelName, VideoChannelDescriptor video, AudioChannelDescriptor audio)
+    :ChannelId(uiChannelId),
+    ChannelName(sChannelName),
+    VideoDescriptor(video),
+    AudioDescriptor(audio)
+  {
+
+  }
+  Channel(uint32_t uiChannelId, const std::string& sChannelName, VideoChannelDescriptor video)
+    :ChannelId(uiChannelId),
+    ChannelName(sChannelName),
+    VideoDescriptor(video)
+    {
+
+    }
+    Channel(uint32_t uiChannelId, const std::string& sChannelName, AudioChannelDescriptor audio)
+    :ChannelId(uiChannelId),
+    ChannelName(sChannelName),
+    AudioDescriptor(audio)
+    {
+
+    }
+
+    uint32_t ChannelId;
+    std::string ChannelName;
+    boost::optional<VideoChannelDescriptor> VideoDescriptor;
+    boost::optional<AudioChannelDescriptor> AudioDescriptor;
+};
+
 /**
  * Our Rtsp server class is derived from the liveMedia RTSP server. It extends the live555 RTSP server
  * to stream live media sessions.
-*/
+ */
 class LiveRtspServer: public RTSPServer
 {
   friend class LiveRTSPClientSession;
@@ -31,10 +71,11 @@ public:
   unsigned getNumberOfConnectedClients() const { return m_mRtspClientSessions.size(); }
 
 	/// adds an RTSP session for the transcoder session provided the transcoder session exists in the transcoder manager
-	void addRtspMediaSession(const std::string& sSessionName);
+	void addRtspMediaSession(const Channel& channel);
 	/// removes an RTSP session for the corresponding transcoder session from the RTSP server
-	void removeRtspMediaSession(const std::string& sSessionName);
+  void removeRtspMediaSession(const Channel& channel);
 
+protected:
   void endServerSession(const std::string& sSessionName);
 
 protected:
@@ -80,7 +121,7 @@ protected:
   public:
     LiveRTSPClientSession(LiveRtspServer& ourServer, unsigned sessionId)
       : RTSPClientSession(ourServer, sessionId),
-      m_parent(ourServer),
+      m_pParent(&ourServer),
       m_uiSessionId(sessionId)
     {
 
@@ -88,9 +129,17 @@ protected:
 
     virtual ~LiveRTSPClientSession()
     {
-      m_parent.removeClientSession(m_uiSessionId);
+      // We need to check if the parent is still valid
+      // in the case where the client session outlives the
+      // RTSPServer child class implementation!
+      if (m_pParent)
+        m_pParent->removeClientSession(m_uiSessionId);
     }
 
+    void orphan()
+    {
+      m_pParent = NULL;
+    }
   protected:
     /**
      * @brief Overriding this to limit the maximum number of clients that can connect to the RTSP server
@@ -102,7 +151,7 @@ protected:
       // "urlPreSuffix" should be the session (stream) name, and
       // "urlSuffix" should be the subsession (track) name.
 
-      if (m_parent.getMaxConnectedClients() == 0)
+      if (m_pParent->getMaxConnectedClients() == 0)
       {
         // no limitiations set: let base class handle it
         RTSPClientSession::handleCmd_SETUP(ourClientConnection, urlPreSuffix, urlSuffix, fullRequestStr);
@@ -118,7 +167,7 @@ protected:
       if (fOurServerMediaSession == NULL)
       {
         // this is a new session: reject the user if we have reached the server limit
-        if (m_parent.getNumberOfConnectedClients() <= m_parent.getMaxConnectedClients())
+        if (m_pParent->getNumberOfConnectedClients() <= m_pParent->getMaxConnectedClients())
         {
           RTSPClientSession::handleCmd_SETUP(ourClientConnection, urlPreSuffix, urlSuffix, fullRequestStr);
           return;
@@ -143,7 +192,7 @@ protected:
       }
     }
 
-    LiveRtspServer& m_parent;
+    LiveRtspServer* m_pParent;
     unsigned m_uiSessionId;
   };
 

@@ -5,7 +5,9 @@
 namespace lme
 {
 
-/**
+// #define DEBUG_LME
+
+  /**
  * @brief The MediaSample contains the data as well as timestamp information.
  *
  * The channel and source ids can be used to identify the media sample as belonging 
@@ -20,7 +22,15 @@ public:
   MediaSample()
     :m_dPresentationTime(0.0)
   {
-
+#ifdef DEBUG_LME
+    VLOG(2) << "MediaSample()";
+#endif
+  }
+  ~MediaSample()
+  {
+#ifdef DEBUG_LME
+    VLOG(2) << "~MediaSample()";
+#endif
   }
   /**
    * @brief Getter for presentation time

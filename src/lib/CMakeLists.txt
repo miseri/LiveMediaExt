@@ -40,8 +40,9 @@ LiveAMRAudioDeviceSource.cpp
 LiveAMRAudioRTPSink.cpp
 LiveAMRSubsession.cpp
 LiveDeviceSource.cpp
-LiveH264RtpSink.cpp
+#LiveH264RtpSink.cpp
 LiveH264Subsession.cpp
+LiveH264VideoDeviceSource.cpp
 LiveMediaSubsession.cpp
 LiveRtspServer.cpp
 LiveSourceTaskScheduler.cpp
@@ -53,7 +54,7 @@ LiveMediaExtPch.h
 ../../include/LiveMediaExt/LiveAMRAudioRTPSink.h
 ../../include/LiveMediaExt/LiveAMRSubsession.h
 ../../include/LiveMediaExt/LiveDeviceSource.h
-../../include/LiveMediaExt/LiveH264RtpSink.h
+#../../include/LiveMediaExt/LiveH264RtpSink.h
 ../../include/LiveMediaExt/LiveH264Subsession.h
 ../../include/LiveMediaExt/LiveH264VideoDeviceSource.h
 ../../include/LiveMediaExt/LiveMediaSubsession.h
@@ -64,6 +65,7 @@ LiveMediaExtPch.h
 )
 SET(MED_SRCS
 MediaTypes.cpp
+PacketManagerMediaChannel.cpp
 RtspService.cpp
 VirtualMediaSource.cpp
 )

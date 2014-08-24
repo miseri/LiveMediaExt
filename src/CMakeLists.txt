@@ -10,6 +10,9 @@ SET(RUNTIME_OUTPUT_DIRECTORY ${LiveMediaExt_SOURCE_DIR}/../bin)
 
 SET(LiveMediaExt_BIN ${LiveMediaExt_SOURCE_DIR}/../bin)
 
+# set this to true to add the externals/live555-CMake projects to the solution
+SET(BUILD_LIVE555 true)
+
 message("LiveMediaExt_SOURCE_DIR directories:" ${LiveMediaExt_SOURCE_DIR})
 #message("GLOG_DIR directories:" $ENV{GLOG_DIR})
 message("BOOST_INCLUDE_DIR:" $ENV{BOOST_INCLUDE_DIR})
@@ -32,34 +35,38 @@ ENDIF(WIN32)
 # only for windows.
 IF(WIN32)
 add_library( glog UNKNOWN IMPORTED )
-add_library( liveMedia UNKNOWN IMPORTED )
-add_library( BasicUsageEnvironment UNKNOWN IMPORTED )
-add_library( groupsock UNKNOWN IMPORTED )
-add_library( UsageEnvironment UNKNOWN IMPORTED )
+#add_library( liveMedia UNKNOWN IMPORTED )
+#add_library( BasicUsageEnvironment UNKNOWN IMPORTED )
+#add_library( groupsock UNKNOWN IMPORTED )
+#add_library( UsageEnvironment UNKNOWN IMPORTED )
 
 # Define two import-locations: one for debug and one for release.
 set_target_properties( glog PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/glog/vsprojects/libglog/VC12/Debug/libglog.lib )
 set_target_properties( glog PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/glog/vsprojects/libglog/VC12/Release/libglog.lib )
-set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/BasicUsageEnvironment.lib )
-set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/liveMedia.lib )
-set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/groupsock.lib )
-set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/UsageEnvironment.lib )
-set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/BasicUsageEnvironment.lib )
-set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/liveMedia.lib )
-set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/groupsock.lib )
-set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/UsageEnvironment.lib )
+#set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/BasicUsageEnvironment.lib )
+#set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/liveMedia.lib )
+#set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/groupsock.lib )
+#set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/UsageEnvironment.lib )
+#set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/BasicUsageEnvironment.lib )
+#set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/liveMedia.lib )
+#set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/groupsock.lib )
+#set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/UsageEnvironment.lib )
 ENDIF(WIN32)
+
+SET(live555Includes
+${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/BasicUsageEnvironment/include
+${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/groupsock/include
+${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/liveMedia/include
+${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/UsageEnvironment/include
+)
 
 IF(WIN32)
 SET(LiveMediaExtIncludes
 ${LiveMediaExt_SOURCE_DIR}
 ${LiveMediaExt_SOURCE_DIR}/lib
 ${LiveMediaExt_SOURCE_DIR}/../include/
+${live555Includes}
 ${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/BasicUsageEnvironment/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/groupsock/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/liveMedia/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/UsageEnvironment/include
 ${LiveMediaExt_SOURCE_DIR}/../externals/cpp-util/include
 $ENV{BOOST_INCLUDE_DIR}
 )
@@ -69,11 +76,8 @@ SET(LiveMediaExtIncludes
 ${LiveMediaExt_SOURCE_DIR}
 ${LiveMediaExt_SOURCE_DIR}/lib
 ${LiveMediaExt_SOURCE_DIR}/../include
+${live555Includes}
 ${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/BasicUsageEnvironment/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/groupsock/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/liveMedia/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/UsageEnvironment/include
 ${LiveMediaExt_SOURCE_DIR}/../externals/cpp-util/include
 /usr/local/include
 )
@@ -138,3 +142,7 @@ $ENV{CPP_UTIL_DIR}/include
 
 ADD_SUBDIRECTORY( apps)
 ADD_SUBDIRECTORY( lib) 
+# HACK TO BUILD LIVE555 CMake project from this CMake project
+IF (BUILD_LIVE555)
+ADD_SUBDIRECTORY (../externals/live555-CMake/live ${LiveMediaExt_SOURCE_DIR}/../projects-vs2013)
+ENDIF (BUILD_LIVE555)

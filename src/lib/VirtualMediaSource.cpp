@@ -35,13 +35,20 @@ void VirtualMediaSource::generateMediaSampleTimeout(const boost::system::error_c
 {
   if (!ec)
   {
-    LOG(INFO) << "Generating media sample with PTS " << m_dLastTimestamp;
+    VLOG(10) << "Generating media sample with PTS " << m_dLastTimestamp;
     std::vector<MediaSample> mediaSamples;
     Buffer buffer(new uint8_t[m_uiMediaSampleSize], m_uiMediaSampleSize);
     char* pBuffer = reinterpret_cast<char*>(const_cast<uint8_t*>(buffer.data()));
 
-    for (size_t j = 0; j < m_uiMediaSampleSize; ++j)
+    // HACK for now: H264
+    pBuffer[0] = 0;
+    pBuffer[1] = 0;
+    pBuffer[2] = 0;
+    pBuffer[3] = 1;
+    pBuffer[4] = 65;
+    for (size_t j = 5; j < m_uiMediaSampleSize; ++j)
         pBuffer[j] = rand() % 256;
+
 
     MediaSample mediaSample;
     mediaSample.setPresentationTime(m_dLastTimestamp);

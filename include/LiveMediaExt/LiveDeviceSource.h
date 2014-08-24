@@ -1,4 +1,5 @@
 #pragma once
+#include <deque>
 #include <queue>
 #include <string>
 #include "FramedSource.hh"
@@ -39,7 +40,7 @@ public:
   /**
    * @brief Destructor
    */
-	virtual ~LiveDeviceSource(void);
+	virtual ~LiveDeviceSource();
   /**
    * @brief Getter for unique client Id
    */  
@@ -78,11 +79,12 @@ protected:
   UsageEnvironment& m_env;
   /// unique client id
   unsigned m_uiClientId;
-
+  /// Media subsession
   LiveMediaSubsession* m_pParentSubsession;
+  /// Framegrabber
   IFrameGrabber* m_pFrameGrabber;
 	// queue for outgoing samples
-	std::queue<MediaSample> m_qMediaSamples;
+	std::deque<MediaSample> m_qMediaSamples;
 //
 //	/// Related RTP Sink
 //	//LiveRtvcRtpSink* m_pSink;

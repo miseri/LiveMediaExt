@@ -29,17 +29,20 @@ LiveDeviceSource::LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, L
  // m_bSourceUpdateOccurred(false),
   m_bIsPlaying(false)
 {
+  VLOG(2) << "Constructor: adding device source to parent subsession";
   m_pParentSubsession->addDeviceSource(this);
 }
 
 LiveDeviceSource::~LiveDeviceSource(void)
 {
+  VLOG(2) << "Destructor: removing device source from parent subsession";
   m_pParentSubsession->removeDeviceSource(this);
- // if (m_pFrameGrabber) delete m_pFrameGrabber ; m_pFrameGrabber  = NULL;
+  if (m_pFrameGrabber) delete m_pFrameGrabber ; m_pFrameGrabber  = NULL;
 }
 
 void LiveDeviceSource::doGetNextFrame()
 {
+  //  VLOG(2) << "LiveDeviceSource::doGetNextFrame()";
   // Arrange here for our "deliverFrame" member function to be called
   // when the next frame of data becomes available from the device.
   // This must be done in a non-blocking fashion - i.e., so that we
@@ -67,7 +70,8 @@ void LiveDeviceSource::doGetNextFrame()
 // method to add data to the device
 bool LiveDeviceSource::retrieveMediaSampleFromBuffer()
 {
-	unsigned uiSize = 0;
+  //  VLOG(2) << "LiveDeviceSource::retrieveMediaSampleFromBuffer()";
+  unsigned uiSize = 0;
 	double dStartTime = 0.0;
 	BYTE* pBuffer = m_pFrameGrabber->getNextFrame(uiSize, dStartTime);
 	
@@ -87,7 +91,7 @@ bool LiveDeviceSource::retrieveMediaSampleFromBuffer()
     BYTE* pData = new uint8_t[uiSize];
     memcpy(pData, pBuffer, uiSize);
     mediaSample.setData(Buffer(pData, uiSize));
-    m_qMediaSamples.push(mediaSample);
+    m_qMediaSamples.push_back(mediaSample);
     return true;
 	}
   return false;
@@ -95,7 +99,7 @@ bool LiveDeviceSource::retrieveMediaSampleFromBuffer()
 
 void LiveDeviceSource::deliverFrame()
 {
-  VLOG(15) << "Called";
+  //  VLOG(2) << "LiveDeviceSource::deliverFrame()";
 
   // This would be called when new frame data is available from the device.
   // This function should deliver the next frame of data from the device,
@@ -121,11 +125,12 @@ void LiveDeviceSource::deliverFrame()
 
   // Deliver the data here:
   MediaSample mediaSample = m_qMediaSamples.front();
-  m_qMediaSamples.pop();
+  m_qMediaSamples.pop_front();
 
   double dStartTime = mediaSample.getPresentationTime();
   int nSize = mediaSample.getMediaSize();
   const BYTE* pBuffer = mediaSample.getDataBuffer().data();
+  //  VLOG(2) << "LiveDeviceSource::deliverFrame() Sample size: " << nSize;
   // The start time of the first sample is stored as a reference start time for the media samples
   // Similarly we store the current time obtained by gettimeofday in m_tOffsetTime.
   // The reason for this is that we need to start timestamping the samples with timestamps starting at gettimeofday
@@ -142,11 +147,11 @@ void LiveDeviceSource::deliverFrame()
     // Set the presentation time of the first sample
     gettimeofday(&fPresentationTime, NULL);
 
-    VLOG(15) << "Delivering first media frame";
+    //    VLOG(2) << "Delivering first media frame";
   }
   else
   {
-      VLOG(15) << "Delivering next media frame";
+    //    VLOG(2) << "Delivering next media frame";
 
     // Calculate the difference between this samples start time and the initial samples start time
     double dDifference = dStartTime - m_dOffsetTime;
@@ -178,6 +183,7 @@ void LiveDeviceSource::deliverFrame()
     fDurationInMicroseconds = 0;
   }
 
+//  VLOG(2) << "Calling FramedSource::afterGetting";
   // After delivering the data, inform the reader that it is now available:
   FramedSource::afterGetting(this);
 }

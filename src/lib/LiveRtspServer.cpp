@@ -73,76 +73,93 @@ LiveRtspServer::LiveRtspServer(UsageEnvironment& env, int ourSocket, Port ourPor
 
 LiveRtspServer::~LiveRtspServer() 
 {
+  // In cases where the client is still streaming when
+  // the server is shutdown, the super class (RTSPServer)
+  // deletes the client session objects resulting in them
+  // trying to deregister themselves from LiveRtspServer.
+  // We need to orphan them before to avoid crashes!
+  for (LiveClientSessionMap_t::iterator it = m_mRtspClientSessions.begin(); it != m_mRtspClientSessions.end(); ++it)
+  {
+    it->second->orphan();
+  }
+
   // Turn off any liveness checking:
   envir().taskScheduler().unscheduleDelayedTask(m_checkClientSessionTask);
 }
 
-static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& rRtspServer, char const* fileName/*, TranscoderSessionManager::ptr pSessionManager*/); // forward
+// fwd
+static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& rRtspServer, const Channel& channel/*char const* fileName, TranscoderSessionManager::ptr pSessionManager*/); // forward
 
-void LiveRtspServer::addRtspMediaSession(const std::string& sSessionName)
+void LiveRtspServer::addRtspMediaSession(const Channel& channel)
 {
 	// Check if the transcoder manager has such a session
   //TranscoderSessionManager::ptr pTranscoderSessionManager = m_pTranscoderSessionManager.lock();
   //assert(pTranscoderSessionManager);
 	//Boolean bSessionExists = pTranscoderSessionManager->exists(sSessionName);
 
+  const std::string sSessionName = channel.ChannelName;
 	// Next, check whether we already have an RTSP "ServerMediaSession" for this media stream:
-	//ServerMediaSession* sms = RTSPServer::lookupServerMediaSession(sSessionName.c_str());
-	//Boolean bSmsExists = sms != NULL;
+	ServerMediaSession* sms = RTSPServer::lookupServerMediaSession(sSessionName.c_str());
+	Boolean bSmsExists = sms != NULL;
 
  // VLOG(5) << "Session " << sSessionName << " status - Transcoder Session Manager: " << (int) bSessionExists << " RTSPServer: " << (int) bSmsExists;
 
 	//// Handle the four possibilities for "sessionExists" and "smsExists":
 	//if (!bSessionExists) 
 	//{
-	//	if (bSmsExists) 
-	//	{
- //     VLOG(2) << "Removing ServerMediaSession " << sSessionName;
-	//		// "sms" was created for a media stream that the transcoder is no longer sending. Remove it.
-	//		removeServerMediaSession(sms);
-	//	}
- //   else
- //   {
- //     VLOG(2) << "Session " << sSessionName << " doesn't exist, no need to remove";
- //   }
-	//}
-	//else 
+	//if (bSmsExists) 
 	//{
-	//	if (!bSmsExists)
-	//	{
- //     VLOG(2) << "Creating Session " << sSessionName << " on RTSP server";
-	//		// Create a new "ServerMediaSession" object for streaming from the named file.
-	//		sms = createNewSMS(envir(), *this, sSessionName.c_str(), pTranscoderSessionManager);
- //     VLOG(2) << "Adding ServerMediaSession " << sSessionName;
-	//		addServerMediaSession(sms);
-	//	}
- //   else
- //   {
- //     VLOG(2) << "Session " << sSessionName << " already on RTSP server";
- //   }
-	//}
-}
-
-void LiveRtspServer::removeRtspMediaSession(const std::string& sSessionName)
-{
-	//// Check whether we already have a "ServerMediaSession" for this media stream:
-	//ServerMediaSession* sms = RTSPServer::lookupServerMediaSession(sSessionName.c_str());
-	//
-	//if (sms != NULL)
-	//{
- //   VLOG(2) << "Removed session " << sSessionName << " from RTSP ServerMediaSessions";
+ //   VLOG(2) << "Removing ServerMediaSession " << sSessionName;
 	//	// "sms" was created for a media stream that the transcoder is no longer sending. Remove it.
 	//	removeServerMediaSession(sms);
 	//}
-	//else
-	//{
- //   LOG(WARNING) << "Failed removing session " << sSessionName << " from RTSP ServerMediaSessions";
+ // else
+ // {
+ //   VLOG(2) << "Session " << sSessionName << " doesn't exist, no need to remove";
+ // }
 	//}
+	//else 
+	//{
+	if (!bSmsExists)
+	{
+    VLOG(2) << "Creating Session " << sSessionName << " on RTSP server";
+		// Create a new "ServerMediaSession" object for streaming from the named file.
+		sms = createNewSMS(envir(), *this, channel);
+    VLOG(2) << "Adding ServerMediaSession " << sSessionName;
+		addServerMediaSession(sms);
+	}
+  else
+  {
+    LOG(WARNING) << "Session " << sSessionName << " already exists on RTSP server";
+  }
+	//}
+}
+
+void LiveRtspServer::removeRtspMediaSession(const Channel& channel)
+{
+  /// code to kick clients before removing session so that there are no outstanding references
+  endServerSession(channel.ChannelName);
+
+	// Check whether we already have a "ServerMediaSession" for this media stream:
+  ServerMediaSession* sms = RTSPServer::lookupServerMediaSession(channel.ChannelName.c_str());
+	
+	if (sms != NULL)
+	{
+    VLOG(2) << "Removed session Channel Id: " << channel.ChannelId << " Name: " << channel.ChannelName << " from RTSP ServerMediaSessions";
+		// "sms" was created for a media stream that the transcoder is no longer sending. Remove it.
+		removeServerMediaSession(sms);
+	}
+	else
+	{
+    LOG(WARNING) << "Failed removing session " << channel.ChannelName << " from RTSP ServerMediaSessions";
+	}
 }
 
 
 ServerMediaSession* LiveRtspServer::lookupServerMediaSession(char const* streamName) 
 {
+  VLOG(2) << "Looking up new ServerMediaSession: " << streamName;
+  return RTSPServer::lookupServerMediaSession(streamName);
  // VLOG(2) << "Looking up new ServerMediaSession: " << streamName;
 	//// Check if the transcoder manager has such a session
  // TranscoderSessionManager::ptr pTranscoderSessionManager = m_pTranscoderSessionManager.lock();
@@ -193,8 +210,9 @@ ServerMediaSession* LiveRtspServer::lookupServerMediaSession(char const* streamN
 	sms = ServerMediaSession::createNew(env, fileName, fileName, descStr);\
 } while(0)
 
-static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& rRtspServer, char const* streamName/*, TranscoderSessionManager::ptr pTranscoderSessionManager*/) 
+static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& rRtspServer, const Channel& channel /*char const* streamName, TranscoderSessionManager::ptr pTranscoderSessionManager*/)
 {
+  VLOG(2) << "createNewSMS: " << channel.ChannelName;
   //// Use the session manager to obtain the information about the media streams
   //TranscoderClientSession* pTranscoderClientSession = pTranscoderSessionManager->find(streamName);
 
@@ -202,8 +220,56 @@ static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& r
   //{
   //  VLOG(2) << "Retrieved " << streamName << " from transcoder manager";
 
-  //  ServerMediaSession* sms = ServerMediaSession::createNew(env, streamName, streamName, "Session streamed by \"MSS\"", True/*SSM*/);
+  ServerMediaSession* sms = ServerMediaSession::createNew(env, channel.ChannelName.c_str(), channel.ChannelName.c_str(), "Session streamed by \"MSS\"", True/*SSM*/);
 
+  // at least a video or audio descriptor must be set
+  assert(channel.VideoDescriptor || channel.AudioDescriptor);
+
+  // FIXME: hard-coded in application and lib for now!
+  uint32_t uiVideoId = 0;
+  uint32_t uiAudioId = 0;
+
+  // create the live media RTSP subsessions
+  if (channel.VideoDescriptor)
+  {
+    // if there is a video channel, the audio source id increases!
+    uiAudioId = 1;
+    LiveMediaSubsession* pLiveMediaSubsession = LiveMediaSubsessionFactory::createVideoSubsession(env, rRtspServer, channel.ChannelName, channel.ChannelId, uiVideoId, *(channel.VideoDescriptor));
+    if (pLiveMediaSubsession == NULL)
+    {
+      LOG(WARNING) << "TODO: Invalid video subsession";
+      // RG: live555 update makes destructor protected!
+      // TODO: revise
+      // delete sms;
+      return NULL;
+    }
+    else
+    {
+      VLOG(2) << "Added " << channel.ChannelName << " to video ServerMediaSession";
+      sms->addSubsession(pLiveMediaSubsession);
+    }
+  }
+
+  // create the live media RTSP subsessions
+  if (channel.AudioDescriptor)
+  {
+    LiveMediaSubsession* pLiveMediaSubsession = LiveMediaSubsessionFactory::createAudioSubsession(env, rRtspServer, channel.ChannelName, channel.ChannelId, uiAudioId, *(channel.AudioDescriptor));
+    if (pLiveMediaSubsession == NULL)
+    {
+      LOG(WARNING) << "TODO: Invalid audio subsession";
+      // RG: live555 update makes destructor protected!
+      // TODO: revise
+      // delete sms;
+      return NULL;
+    }
+    else
+    {
+      VLOG(2) << "Added " << channel.ChannelName << " audio to ServerMediaSession";
+      sms->addSubsession(pLiveMediaSubsession);
+    }
+  }
+
+  return sms;
   //  MediaSession mediaSession = pTranscoderClientSession->getMediaSession();
   //  const MediaSubsessionPtrList_t& vSubsessions = mediaSession.getMediaSubsessions();
 
@@ -304,7 +370,7 @@ void LiveRtspServer::endServerSession(const std::string& sSession)
 
   if (sms)
   {
-    //VLOG(2) << "Kicking all clients from RTSP media session: " << sSession;
+    VLOG(2) << "TODO: Kick all clients from RTSP media session: " << sSession;
     //// First kick all clients so that we can remove the subsession and dereg from the scheduler
     //// The LiveMediaSubsession objects can only be reclaimed once there are no outstanding references
     //ServerMediaSubsessionIterator iter(*sms);
@@ -353,5 +419,5 @@ void LiveRtspServer::setMaxConnectedClients( unsigned val )
 #pragma chMSG(TODO: if val is less than previous value kick oldest clients to meet requirement)
 }
 
-}
+} // lme
 

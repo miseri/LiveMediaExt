@@ -40,7 +40,7 @@ public:
                                           const std::string& sSessionName,
                                           const unsigned uiChannelId,
                                           unsigned uiSubsessionId,
-                                          VideoChannelDescriptor& videoDescriptor
+                                          const VideoChannelDescriptor& videoDescriptor
                                           )
   {
     VLOG(2) << "Creating new LiveMediaSubsession " << sSessionName 
@@ -70,11 +70,11 @@ public:
    * @brief 
    */
   static LiveMediaSubsession* createAudioSubsession(UsageEnvironment& env,
-    LiveRtspServer& rRtspServer,
-    const std::string& sSessionName,
-    const unsigned uiChannelId,
-    unsigned uiSubsessionId,
-    AudioChannelDescriptor& audioDescriptor
+                                                    LiveRtspServer& rRtspServer,
+                                                    const std::string& sSessionName,
+                                                    const unsigned uiChannelId,
+                                                    unsigned uiSubsessionId,
+                                                    const AudioChannelDescriptor& audioDescriptor
     )
   {
     VLOG(2) << "Creating new audio LiveMediaSubsession " << sSessionName
@@ -105,4 +105,4 @@ private:
 
 };
 
-}
+} // lme
