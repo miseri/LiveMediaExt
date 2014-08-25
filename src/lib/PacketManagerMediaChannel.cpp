@@ -51,7 +51,7 @@ boost::optional<MediaSample> PacketManagerMediaChannel::getVideo()
     return boost::optional<MediaSample>();
   }
 #else
-  boost::mutex::scoped_lock l(m_audioLock);
+  boost::mutex::scoped_lock l(m_videoLock);
   if (!m_videoSamples.empty())
   {
     MediaSample mediaSample = m_videoSamples.front();
