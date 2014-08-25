@@ -34,6 +34,10 @@ boost::system::error_code RtspService::start()
     // TODO: add custom error codes!!!
     return boost::system::error_code(boost::system::errc::bad_file_descriptor, boost::system::get_generic_category());
   }
+#if 0
+  // disable TCP streaming for testing
+  m_pRtspServer->disableStreamingRTPOverTCP();
+#endif
 
   // Add task that checks if there's new data in the queue
   checkSessionsTask(this);
