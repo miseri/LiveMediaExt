@@ -8,8 +8,8 @@ namespace lme
 LiveH264VideoDeviceSource::LiveH264VideoDeviceSource( UsageEnvironment& env, unsigned uiClientId,  
                                                       LiveMediaSubsession* pParent, IMediaSampleBuffer* pSampleBuffer,
                                                       const std::string& sSps, const std::string& sPps )
-  :LiveDeviceSource(env, uiClientId, pParent, new SimpleFrameGrabber(pSampleBuffer)),
-  fLastSeenSPS(NULL), fLastSeenSPSSize(0), fLastSeenPPS(NULL), fLastSeenPPSSize(0)
+  :LiveDeviceSource(env, uiClientId, pParent, new SimpleFrameGrabber(pSampleBuffer))
+  // ,fLastSeenSPS(NULL), fLastSeenSPSSize(0), fLastSeenPPS(NULL), fLastSeenPPSSize(0)
 {
   //LOG_CONSTRUCTION
 }
@@ -32,11 +32,11 @@ LiveH264VideoDeviceSource* LiveH264VideoDeviceSource::createNew(UsageEnvironment
 
 bool LiveH264VideoDeviceSource::retrieveMediaSampleFromBuffer()
 {
-  VLOG(2) << "LiveH264VideoDeviceSource::retrieveMediaSampleFromBuffer";
+  VLOG(15) << "LiveH264VideoDeviceSource::retrieveMediaSampleFromBuffer";
   unsigned uiSize = 0;
   double dStartTime = 0.0;
   BYTE* pBuffer = m_pFrameGrabber->getNextFrame(uiSize, dStartTime);
-  VLOG(2) << "Retrieved sample from buffer: " << uiSize << " PTS: " << dStartTime;
+  VLOG(10) << "Retrieved sample from buffer: " << uiSize << " PTS: " << dStartTime;
   // Make sure there's data, the frame grabber should return null if it doesn't have any
   if (!pBuffer)
   {
@@ -54,14 +54,14 @@ bool LiveH264VideoDeviceSource::retrieveMediaSampleFromBuffer()
     {
       // attempt 1: search for start codes and create samples
       unsigned uiStartingPos = 4;
-      for (int i = uiStartingPos; i < uiSize - 4; ++i)
+      for (size_t i = uiStartingPos; i < uiSize - 4; ++i)
       {
         if (memcmp(startCode, pBuffer + i, 4) == 0)
         {
           unsigned uiNalUnitSize = i - uiStartingPos;
           printNalInfo(pBuffer + uiStartingPos, uiNalUnitSize);
 
-          VLOG(5) << "Found start code at pos " << i << " - storing NAL starting at: " << uiStartingPos << " Size: " << uiNalUnitSize;
+          VLOG(15) << "Found start code at pos " << i << " - storing NAL starting at: " << uiStartingPos << " Size: " << uiNalUnitSize;
           // found next starting pos, push previous NAL
           MediaSample mediaSample;
           mediaSample.setPresentationTime(dStartTime);
@@ -77,7 +77,7 @@ bool LiveH264VideoDeviceSource::retrieveMediaSampleFromBuffer()
       unsigned uiNalUnitSize = uiSize - uiStartingPos;
       printNalInfo(pBuffer + uiStartingPos, uiNalUnitSize);
       
-      VLOG(5) << "Pushing final NAL - storing NAL starting at: " << uiStartingPos << " Size: " << uiNalUnitSize;
+      VLOG(10) << "Pushing final NAL - storing NAL starting at: " << uiStartingPos << " Size: " << uiNalUnitSize;
       MediaSample mediaSample;
       mediaSample.setPresentationTime(dStartTime);
       BYTE* pData = new uint8_t[uiNalUnitSize];
@@ -85,7 +85,7 @@ bool LiveH264VideoDeviceSource::retrieveMediaSampleFromBuffer()
       Buffer dataBuffer(pData, uiNalUnitSize);
       mediaSample.setData(dataBuffer);
       m_qMediaSamples.push_back(mediaSample);
-      VLOG(5) << "Multiple NAL units found: " << m_qMediaSamples.size() << " Sample size : " << uiSize;
+      VLOG(15) << "Multiple NAL units found: " << m_qMediaSamples.size() << " Sample size : " << uiSize;
       return true;
     }
     else
@@ -104,7 +104,7 @@ bool LiveH264VideoDeviceSource::retrieveMediaSampleFromBuffer()
     }
   }
 }
-
+/*
 void LiveH264VideoDeviceSource::afterGettingFrame(void* clientData, unsigned frameSize,
                                                   unsigned numTruncatedBytes,
                                                   struct timeval presentationTime,
@@ -152,24 +152,25 @@ void LiveH264VideoDeviceSource::afterGettingFrame1(unsigned frameSize, unsigned 
   fDurationInMicroseconds = durationInMicroseconds;
   afterGetting(this);
 }
+*/
 
 void LiveH264VideoDeviceSource::printNalInfo( unsigned char* pNal, unsigned uiSize )
 {  
-  VLOG(2) << "LiveH264VideoDeviceSource::printNalInfo";
+  VLOG(10) << "LiveH264VideoDeviceSource::printNalInfo";
   // Get the "nal_unit_type", to see if this NAL unit is one that we want to save a copy of:
   u_int8_t nal_unit_type = pNal[0]&0x1F;
   Boolean const isVCL = nal_unit_type <= 5 && nal_unit_type > 0; // Would need to include type 20 for SVC and MVC #####
 
   if (nal_unit_type == 7) 
   { // Sequence parameter set (SPS)
-    VLOG(5) << "NAL: SPS (Size: " << uiSize << " bytes)";
+    VLOG(10) << "NAL: SPS (Size: " << uiSize << " bytes)";
   } else if (nal_unit_type == 8) 
   { // Picture parameter set (PPS)
-    VLOG(5) << "NAL: PPS  (Size: " << uiSize << " bytes)";
+    VLOG(10) << "NAL: PPS  (Size: " << uiSize << " bytes)";
   }
   else
   {
-    VLOG(5) << "NAL (type: " << (int)nal_unit_type << ", is VCL: " << isVCL << " Size: " << uiSize << ") ";
+    VLOG(10) << "NAL (type: " << (int)nal_unit_type << ", is VCL: " << isVCL << " Size: " << uiSize << ") ";
   }
 }
 

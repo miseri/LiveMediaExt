@@ -17,7 +17,7 @@ public:
                                               LiveMediaSubsession* pParent, IMediaSampleBuffer* pSampleBuffer,
                                               const std::string& sSps, const std::string& sPps);
 
-#if 1
+#if 0
   void getSPSandPPS(u_int8_t*& sps, unsigned& spsSize, u_int8_t*& pps, unsigned& ppsSize) const{
     // Returns pointers to copies of the most recently seen SPS (sequence parameter set) and PPS (picture parameter set) NAL unit.
     // (NULL pointers are returned if the NAL units have not yet been seen.)
@@ -43,6 +43,7 @@ protected:
                             const std::string& sSps, const std::string& sPps);
 
 protected:
+  /*
   static void afterGettingFrame(void* clientData, unsigned frameSize,
                                 unsigned numTruncatedBytes,
                                 struct timeval presentationTime,
@@ -51,8 +52,8 @@ protected:
                           unsigned numTruncatedBytes,
                           struct timeval presentationTime,
                           unsigned durationInMicroseconds);
-
-#if 1
+  */
+#if 0
   void saveCopyOfSPS(u_int8_t* from, unsigned size)
   {
     delete[] fLastSeenSPS;
@@ -77,7 +78,7 @@ private:
 
 private:
 
-#if 1
+#if 0
   //Boolean fIncludeStartCodeInOutput;
   u_int8_t* fLastSeenSPS;
   unsigned fLastSeenSPSSize;

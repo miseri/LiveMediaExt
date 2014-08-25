@@ -101,7 +101,7 @@ FramedSource* LiveMediaSubsession::createNewStreamSource( unsigned clientSession
 {
   assert(m_pSampleBuffer);
   // delegating creation call to subclasses of LiveMediaSubsession
-  LiveDeviceSource* pSource = createSubsessionSpecificSource(clientSessionId, m_pSampleBuffer);
+  FramedSource* pSource = createSubsessionSpecificSource(clientSessionId, m_pSampleBuffer);
   // make sure subclasses were able to construct source
   assert(pSource);
   // Call virtual subclass method to set estimated bit rate

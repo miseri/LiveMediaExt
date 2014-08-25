@@ -63,7 +63,7 @@ protected:
   /// @param clientSessionId [in] The id assigned to the client by live555
   /// @param pMediaSampleBuffer [in] The media sample buffer that the device 
   ///        source will retrieve sample from
-  virtual LiveDeviceSource* createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer) = 0;
+  virtual FramedSource* createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer) = 0;
 
 	/// The uiChannelId + uiSubsessionID is used to allow this register itself with the scheduler on construction
 	/// and to deregister itself from the scheduler on destruction

@@ -21,7 +21,7 @@ public:
 protected:
 
   /// Overridden from RtvcLiveMediaSubsession
-  virtual LiveDeviceSource* createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer);
+  virtual FramedSource* createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer);
 	// Overridden from RtvcLiveMediaSubsession
 	virtual void setEstimatedBitRate(unsigned& estBitrate);
   /// Overriding from OnDemandServermediaSubsession

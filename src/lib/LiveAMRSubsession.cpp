@@ -32,7 +32,7 @@ LiveAMRSubsession::~LiveAMRSubsession()
 
 }
 
-LiveDeviceSource* LiveAMRSubsession::createSubsessionSpecificSource( unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer )
+FramedSource* LiveAMRSubsession::createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer)
 {
   return LiveAMRAudioDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer);
 }

@@ -5,6 +5,7 @@
 #include <LiveMediaExt/LiveH264VideoDeviceSource.h>
 #include <H264VideoRTPSink.hh>
 #include "Base64.hh"
+#include "H264VideoStreamDiscreteFramer.hh"
 
 namespace lme
 {
@@ -28,11 +29,14 @@ LiveH264Subsession::~LiveH264Subsession()
   delete[] fFmtpSDPLine;
 }
 
-LiveDeviceSource* LiveH264Subsession::createSubsessionSpecificSource( unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer )
+FramedSource* LiveH264Subsession::createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer)
 {
   // Create standard device source
   //return LiveDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer );
-  return LiveH264VideoDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer, m_sSps, m_sPps);
+  FramedSource* pLiveDeviceSource = LiveH264VideoDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer, m_sSps, m_sPps);
+
+  H264VideoStreamDiscreteFramer* pFramer = H264VideoStreamDiscreteFramer::createNew(envir(), pLiveDeviceSource);
+  return pFramer;
 }
 
 void LiveH264Subsession::setEstimatedBitRate(unsigned& estBitrate)
@@ -46,7 +50,7 @@ RTPSink* LiveH264Subsession::createNewRTPSink( Groupsock* rtpGroupsock, unsigned
   std::string sPropParameterSets = m_sSps + "," + m_sPps;
   H264VideoRTPSink* pSink = H264VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, sPropParameterSets.c_str());
 	// TODO: What packet sizes should be set?!?
-	pSink->setPacketSizes(1400, 10000);
+	pSink->setPacketSizes(1000, 1400);
 	return pSink;
 }
 

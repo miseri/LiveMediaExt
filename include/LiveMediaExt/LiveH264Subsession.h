@@ -19,7 +19,7 @@ public:
 protected:
 
   /// Overridden from RtvcLiveMediaSubsession
-  virtual LiveDeviceSource* createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer);
+  virtual FramedSource* createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer);
   /// Overridden from
   virtual char const* getAuxSDPLine(RTPSink* rtpSink, FramedSource* inputSource);
 	/// Overridden from RtvcLiveMediaSubsession
