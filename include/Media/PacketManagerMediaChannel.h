@@ -1,5 +1,5 @@
 #pragma once
-//#define LOCK_FREE
+#define LOCK_FREE
 #ifdef LOCK_FREE
 #include <boost/lockfree/spsc_queue.hpp>
 #else
