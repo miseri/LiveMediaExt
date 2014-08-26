@@ -35,11 +35,27 @@ int main(int argc, char** argv)
   // event loop manager
   ServiceManager serviceManager;
 
+// #define VIDEO
+#define AUDIO
+
   // Create a channel to bridge from the virtual capture device to the RTSP service
   uint32_t uiChannelId = 12345;
   std::string sRtspUri("test");
+  // HACK for now
+#ifdef VIDEO
+#ifdef AUDIO
   uint32_t uiVideoId = 0;
   uint32_t uiAudioId = 1;
+#else
+  uint32_t uiVideoId = 0;
+  uint32_t uiAudioId = 1;
+#endif
+#else
+#ifdef AUDIO
+  uint32_t uiVideoId = 1;
+  uint32_t uiAudioId = 0;
+#endif
+#endif
   SingleChannelManager channelManager(uiChannelId, uiVideoId, uiAudioId);
   PacketManagerMediaChannel& packetManager = channelManager.getPacketManager();
   bool bSuccess;
@@ -48,7 +64,6 @@ int main(int argc, char** argv)
   videoDescriptor.Codec = H264;
   videoDescriptor.Width = 352;
   videoDescriptor.Height = 288;
-#define VIDEO
 #ifdef VIDEO
   // create source thread to simulate live capture
   VirtualMediaSource videoSource(serviceManager.getIoService(), boost::bind(&PacketManagerMediaChannel::addVideoMediaSamples, boost::ref(packetManager), _1), 40, 1000);
@@ -71,7 +86,6 @@ int main(int argc, char** argv)
   audioDescriptor.SamplingFrequency = 8000;
   audioDescriptor.Channels = 1;
 
-// #define AUDIO
 #ifdef AUDIO
   VirtualMediaSource audioSource(serviceManager.getIoService(), boost::bind(&PacketManagerMediaChannel::addAudioMediaSamples, boost::ref(packetManager), _1), 20, 13);
   // register media session with manager
