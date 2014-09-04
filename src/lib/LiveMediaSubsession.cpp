@@ -25,7 +25,9 @@ namespace lme
 LiveMediaSubsession::LiveMediaSubsession( UsageEnvironment& env, LiveRtspServer& rParent, 
                                                   const unsigned uiChannelId, unsigned uiSourceId, 
                                                   const std::string& sSessionName, 
-                                                  bool bVideo, const unsigned uiTotalChannels)
+                                                  bool bVideo, const unsigned uiTotalChannels,
+                                                  IRateAdaptationFactory* pFactory,
+                                                  IRateController* pGlobalRateControl)
 	:OnDemandServerMediaSubsession(env, REUSE_FIRST_SOURCE),
   m_rRtspServer(rParent),
 	m_uiChannelId(uiChannelId),
@@ -33,7 +35,9 @@ LiveMediaSubsession::LiveMediaSubsession( UsageEnvironment& env, LiveRtspServer&
   m_sSessionName(sSessionName),
   m_bVideo(bVideo),
   m_uiTotalChannels(uiTotalChannels),
-  m_pSampleBuffer(NULL)
+  m_pSampleBuffer(NULL),
+  m_pFactory(pFactory),
+  m_pGlobalRateControl(pGlobalRateControl)
 {
 #ifdef RTVC_LOG_CONSTRUCTION
   VLOG(15) << "Constructor Id: " << uiChannelId << ":" << m_uniqueSessionID << " " << m_sSessionName << " " << m_sSubsessionName);
@@ -100,13 +104,45 @@ void LiveMediaSubsession::addMediaSample( const MediaSample& mediaSample )
 FramedSource* LiveMediaSubsession::createNewStreamSource( unsigned clientSessionId, unsigned& estBitrate )
 {
   assert(m_pSampleBuffer);
-  // delegating creation call to subclasses of LiveMediaSubsession
-  FramedSource* pSource = createSubsessionSpecificSource(clientSessionId, m_pSampleBuffer);
+  // delegating creation call to subclasses of LiveMediaSubsession: pass in the global rate control in the case the
+  // subclass wants to use it. It may decide to create it's own rate control method based on the type of the stream
+  FramedSource* pSource = createSubsessionSpecificSource(clientSessionId, m_pSampleBuffer, m_pFactory, m_pGlobalRateControl);
   // make sure subclasses were able to construct source
   assert(pSource);
   // Call virtual subclass method to set estimated bit rate
   setEstimatedBitRate(estBitrate);
   return pSource;
+}
+
+RTPSink* LiveMediaSubsession::createNewRTPSink(Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource)
+{
+  RTPSink* pRtpSink = createSubsessionSpecificRTPSink(rtpGroupsock, rtpPayloadTypeIfDynamic, inputSource);
+  LiveDeviceSource* pDeviceSource = NULL;
+  if (inputSource->isH264VideoStreamFramer())
+  {
+    H264or5VideoStreamFramer* pFramer = static_cast<H264or5VideoStreamFramer*>(inputSource);
+    // unsafe cast! We assume that the input source is a LiveDeviceSource as all source and sink construction 
+    // is happening inside this LiveMediaSubsession!
+    // get the framed LiveDeviceSource
+    pDeviceSource = static_cast<LiveDeviceSource*>(pFramer->inputSource());
+  }
+  else
+  {
+    // unsafe cast! We assume that the input source is a LiveDeviceSource as all source and sink construction 
+    // is happening inside this LiveMediaSubsession!
+    pDeviceSource = static_cast<LiveDeviceSource*>(inputSource);    
+  }
+  assert(pDeviceSource);
+  pDeviceSource->setRTPSink(pRtpSink);
+  return pRtpSink;
+}
+
+void LiveMediaSubsession::processClientStatistics()
+{
+  for (LiveDeviceSourcePtrList_t::iterator it = m_vDeviceSources.begin(); it != m_vDeviceSources.end(); it++)
+  {
+    (*it)->processReceiverReports();
+  }
 }
 
 void LiveMediaSubsession::addDeviceSource( LiveDeviceSource* pDeviceSource )

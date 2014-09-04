@@ -19,6 +19,8 @@ namespace lme
 
 // fwd
 class LiveSourceTaskScheduler;
+class IRateAdaptationFactory;
+class IRateController;
 
 /**
  * @brief The RtspService manages the delivery of media samples to clients via an RTSP server.
@@ -33,9 +35,13 @@ public:
   /**
    * @brief Constructor
    */
-  RtspService(ChannelManager& channelManager);
+  RtspService(ChannelManager& channelManager, IRateController* pGlobalRateControl = NULL );
   /**
-   * @brief starts periodic generation of media samples
+   * @brief Initialises live555 components
+   */
+  boost::system::error_code init();
+  /**
+   * @brief starts RTSP service: blocking method!
    */
   boost::system::error_code start();
   /**
@@ -68,11 +74,29 @@ public:
   boost::system::error_code removeChannel(uint32_t uiChannelId);
 
 private:
+  /**
+   * @brief live555 event loop: blocking method
+   */
   void live555EventLoop();
+  /**
+   * @brief cleans up the live555 environment
+   */
   void cleanupLiveMediaEnvironment();
+  /**
+   * @brief live555 callback mechanism to call checkSessionsTask()
+   */
   static void checkSessionsTask(void* clientData);
+  /**
+   * @brief checks if RTSP sessions for RTCP updates.
+   */
   void doCheckSessionsTask();
+  /**
+   * @brief live555 callback mechanism to call checkChannelsTask()
+   */
   static void checkChannelsTask(void* clientData);
+  /**
+   * @brief checks if channels have been added or removed.
+   */
   void doCheckChannelsTask();
 private:
 
@@ -92,14 +116,21 @@ private:
   bool m_bEventLoopRunning;
   /// live555 tasks
   TaskToken m_pCheckSessionsTask;
-
-  // At least the audio or video descriptor, must be set!
+  /// live555 tasks
+  TaskToken m_pCheckChannelsTask;
+  /// queue to notifiy live555 thread of new channels to be added
   std::deque<Channel> m_qChannelsToBeAdded;
+  /// queue to notifiy live555 thread of new channels to be removed
   std::deque<Channel> m_qChannelsToBeRemoved;
+  /// mutex to protect channel queues
   boost::mutex m_channelLock;
-
   typedef std::unordered_map<uint32_t, Channel> ChannelMap_t;
+  /// Map that stores channel info per Channel Id
   ChannelMap_t m_mChannels;
+  /// Rate adaptation module
+  IRateAdaptationFactory* m_pFactory;
+  /// Rate control
+  IRateController* m_pGlobalRateControl;
 };
 
 } // lme

@@ -22,6 +22,7 @@ ADD_EXECUTABLE(LiveSourceMediaStreamer ${LSMS_HDRS} ${LSMS_SRCS})
 TARGET_LINK_LIBRARIES (
 LiveSourceMediaStreamer
 ${LiveMediaExtLibs}
+SimpleRateAdaptation
 BasicUsageEnvironment
 groupsock
 liveMedia

@@ -10,15 +10,15 @@ namespace lme
 LiveAMRSubsession::LiveAMRSubsession( UsageEnvironment& env, LiveRtspServer& rParent, 
                                       const unsigned uiChannelId, unsigned uniqueSessionID, 
                                       const std::string& sSessionName,
-                                      const unsigned uiNumChannels, const unsigned uiBitsPerSample, const unsigned uiSamplingFrequency )
-  :LiveMediaSubsession(env, rParent, uiChannelId, uniqueSessionID, sSessionName, false, 1),
+                                      const unsigned uiNumChannels, const unsigned uiBitsPerSample, const unsigned uiSamplingFrequency,
+                                      IRateAdaptationFactory* pFactory, IRateController* pGlobalRateControl)
+  :LiveMediaSubsession(env, rParent, uiChannelId, uniqueSessionID, sSessionName, false, 1, pFactory, pGlobalRateControl),
   m_numChannels(uiNumChannels),
   m_bitsPerSample(uiBitsPerSample),
   m_samplingFrequency(uiSamplingFrequency),
   m_bitsPerSecond(m_samplingFrequency * m_bitsPerSample * m_numChannels)
 {
 #if 0
-  RtvcLogger& rLogger = RtvcLogger::getInstance();
   "Subsession created: Sampling frequency: " << m_samplingFrequency << "Hz Bits per sample: " << m_bitsPerSample << " Channels: " << m_numChannels << " Bits per second: " << m_bitsPerSecond);
 	env << "Audio source parameters:\n\t" << m_samplingFrequency << " Hz, ";
 	env << m_bitsPerSample << " bits-per-sample, ";
@@ -32,9 +32,14 @@ LiveAMRSubsession::~LiveAMRSubsession()
 
 }
 
-FramedSource* LiveAMRSubsession::createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer)
+FramedSource* LiveAMRSubsession::createSubsessionSpecificSource(unsigned clientSessionId, 
+                                                                IMediaSampleBuffer* pMediaSampleBuffer, 
+                                                                IRateAdaptationFactory* pRateAdaptationFactory,
+                                                                IRateController* pRateControl)
 {
-  return LiveAMRAudioDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer);
+  return LiveAMRAudioDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer, 
+    NULL /* no rate adaptation for AMR */, 
+    NULL /* no rate adaptation for AMR */);
 }
 
 void LiveAMRSubsession::setEstimatedBitRate( unsigned& estBitrate )
@@ -43,7 +48,7 @@ void LiveAMRSubsession::setEstimatedBitRate( unsigned& estBitrate )
 	estBitrate = (m_bitsPerSecond + 500)/1000;
 }
 
-RTPSink* LiveAMRSubsession::createNewRTPSink( Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource )
+RTPSink* LiveAMRSubsession::createSubsessionSpecificRTPSink(Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource)
 {
 	// Create an appropriate audio RTP sink (using "SimpleRTPSink") from the RTP 'groupsock':
 	RTPSink* pRtpSink = LiveAMRAudioRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, false, m_numChannels);

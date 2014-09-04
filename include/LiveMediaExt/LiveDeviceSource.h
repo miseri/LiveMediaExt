@@ -15,6 +15,9 @@ class IMediaSampleBuffer;
 class IFrameGrabber;
 class LiveMediaSubsession;
 class LiveRtvcRtpSink;
+class IRateAdaptationFactory;
+class IRateAdaptation;
+class IRateController;
 
 /**
  * @brief The LiveDeviceSource class allows the insertion of media samples into the liveMedia stack.
@@ -36,7 +39,8 @@ public:
   /**
    * @brief Named constructor
    */
-  static LiveDeviceSource* createNew(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, IMediaSampleBuffer* pSampleBuffer);
+  static LiveDeviceSource* createNew(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, 
+    IMediaSampleBuffer* pSampleBuffer, IRateAdaptationFactory* pRateAdaptationFactory, IRateController* pRateControl);
   /**
    * @brief Destructor
    */
@@ -47,20 +51,30 @@ public:
   unsigned getClientId() const { return m_uiClientId; }
 	/**
    * @brief Static method used in live555 callback mechanism
+   * to call deliverFrame()
    */
   static void doDeliverFrame(void* pInstance);
   /**
-   * @brief
+   * @brief delivers frame into the live555 pipeline
    */
-  void deliverFrame();
-
-	//// method to add data to the device
-  
-  /// returns true if a frame is retrieved from the buffer
+  void deliverFrame();  
+  /**
+   * @brief retrieves a sample from the media buffer
+   * @return returns true if a frame is retrieved from the live source buffer
+   */ 
 	virtual bool retrieveMediaSampleFromBuffer();
-
-  // RTPSink* getRTPSink() { return m_pSink; }
-  // void setRTPSink(RTPSink* pSink) { m_pSink = pSink; }
+  /**
+   * @brief Can be called periodically to process receiver reports
+   */
+  void processReceiverReports();
+  /**
+   * @brief getter for RTPSink.
+   */
+  RTPSink* getRTPSink() { return m_pSink; }
+  /**
+   * @brief Setter for RTPSink
+   */
+  void setRTPSink(RTPSink* pSink) { m_pSink = pSink; }
 
   bool isPlaying() const { return m_bIsPlaying; }
 
@@ -68,7 +82,8 @@ public:
  // bool sourceUpdateOccurred() const { return m_bSourceUpdateOccurred; }
 
 protected:
-  LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, IFrameGrabber* pFrameGrabber);
+  LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, 
+                   IFrameGrabber* pFrameGrabber, IRateAdaptationFactory* pRateAdaptationFactory, IRateController* pRateControl);
 
   // redefined virtual functions:
   virtual void doGetNextFrame();
@@ -85,10 +100,10 @@ protected:
   IFrameGrabber* m_pFrameGrabber;
 	// queue for outgoing samples
 	std::deque<MediaSample> m_qMediaSamples;
-//
 //	/// Related RTP Sink
 //	//LiveRtvcRtpSink* m_pSink;
-//  RTPSink* m_pSink;
+  /// live555 RTP sink
+  RTPSink* m_pSink;
 //  // HACK for client quality updates
 //  // Needs to be refactored
 //  // Using this var in SwitchingDeviceSource: if the quality switches this flag is set so that 
@@ -103,6 +118,14 @@ protected:
 	double m_dOffsetTime;
 
   bool m_bIsPlaying;
+  /// Factory to get optional IRateAdaptation
+  IRateAdaptationFactory* m_pRateAdaptationFactory;
+  /// IRateAdaptation
+  IRateAdaptation* m_pRateAdaptation;
+  /// Rate control class
+  IRateController* m_pRateControl;
+  /// used to determine if RTP transmission stats have new information
+  uint32_t m_uiLastPacketNumReceived;
 };
 
 } // lme

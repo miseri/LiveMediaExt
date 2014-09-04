@@ -2,31 +2,36 @@
 #include <Media/RtspService.h>
 #include <LiveMediaExt/LiveSourceTaskScheduler.h>
 #include <LiveMediaExt/LiveRtspServer.h>
+#include <SimpleRateAdaptation/SimpleRateAdaptationFactory.h>
 
 namespace lme
 {
 
-RtspService::RtspService(ChannelManager& channelManager)
+RtspService::RtspService(ChannelManager& channelManager, IRateController* pGlobalRateControl)
   :m_channelManager(channelManager),
   m_cEventloop(0),
   m_pRtspServer(NULL),
   m_pScheduler(NULL),
   m_pEnv(NULL),
-  m_bEventLoopRunning(false)
+  m_bEventLoopRunning(false),
+  m_pFactory(NULL),
+  m_pGlobalRateControl(pGlobalRateControl)
 {
 
 }
 
-boost::system::error_code RtspService::start()
+boost::system::error_code RtspService::init()
 {
-  VLOG(2) << "Starting RTSP service";
+  VLOG(2) << "Initialising RTSP service";
+  // rate adaptation module
+  m_pFactory = new SimpleRateAdaptationFactory();
   // init live555 environment
   // Setup the liveMedia environment
   m_pScheduler = LiveSourceTaskScheduler::createNew(m_channelManager);
   // live media env
   m_pEnv = BasicUsageEnvironment::createNew(*m_pScheduler);
   VLOG(2) << "Creating RTSP server";
-  m_pRtspServer = LiveRtspServer::createNew(*m_pEnv);
+  m_pRtspServer = LiveRtspServer::createNew(*m_pEnv, 554, 0, m_pFactory, m_pGlobalRateControl);
   if (m_pRtspServer == NULL)
   {
     *m_pEnv << "Failed to create RTSP server: " << m_pEnv->getResultMsg() << "\n";
@@ -43,21 +48,37 @@ boost::system::error_code RtspService::start()
   checkSessionsTask(this);
   checkChannelsTask(this);
 
+  return boost::system::error_code();
+}
+
+boost::system::error_code RtspService::start()
+{
+  VLOG(2) << "Starting RTSP service";
+#ifdef RUN_LIV555_IN_NEW_THREAD
   // start live 555 in new thread
   m_pLive555Thread = std::unique_ptr<boost::thread>(new boost::thread(boost::bind(&RtspService::live555EventLoop, this)));
+
+#else
+  live555EventLoop();
+#endif
   return boost::system::error_code();
 }
 
 boost::system::error_code RtspService::stop()
 {
   VLOG(2) << "Stopping RTSP service";
+  // TODO: could check that we are actually running
+#ifdef RUN_LIV555_IN_NEW_THREAD
   // stop live555 thread
   if (m_pLive555Thread)
   {
     m_cEventloop = 1;
     m_pLive555Thread->join();
   }
-
+#else
+  m_cEventloop = 1;
+  // in this case we can't wait for the end and the application layer has to do it?!?
+#endif
   VLOG(2) << "End of RTSP service";
   return boost::system::error_code();
 }
@@ -80,6 +101,7 @@ void RtspService::cleanupLiveMediaEnvironment()
   if (m_pEnv)
   {
     m_pEnv->taskScheduler().unscheduleDelayedTask(m_pCheckSessionsTask);
+    m_pEnv->taskScheduler().unscheduleDelayedTask(m_pCheckChannelsTask);    
   }
 
   if (m_pRtspServer)
@@ -93,6 +115,12 @@ void RtspService::cleanupLiveMediaEnvironment()
   // clean up live555 environment
   m_pEnv->reclaim();
   if (m_pScheduler) delete m_pScheduler; m_pScheduler = NULL;
+  VLOG(2) << "Clean up done";
+
+  if (m_pFactory)
+  {
+    delete m_pFactory;
+  }
 }
 
 void RtspService::checkSessionsTask(void* clientData)
@@ -105,8 +133,9 @@ void RtspService::doCheckSessionsTask()
 { 
   // TODO: process RTCP reports and update RTCP rate control module
   VLOG(10) << "doCheckSessionsTask";
+  m_pScheduler->processLiveMediaSessions();
   // Call this again, after a brief delay:
-  int uSecsToDelay = 50000; // 50 ms
+  int uSecsToDelay = 1000000; // 1s
   m_pCheckSessionsTask = m_pEnv->taskScheduler().scheduleDelayedTask(uSecsToDelay, (TaskFunc*)&RtspService::checkSessionsTask, this);
 }
 
@@ -142,7 +171,7 @@ void RtspService::doCheckChannelsTask()
 
   // Call this again, after a brief delay:
   int uSecsToDelay = 50000; // 50 ms
-  m_pCheckSessionsTask = m_pEnv->taskScheduler().scheduleDelayedTask(uSecsToDelay, (TaskFunc*)&RtspService::checkChannelsTask, this);
+  m_pCheckChannelsTask = m_pEnv->taskScheduler().scheduleDelayedTask(uSecsToDelay, (TaskFunc*)&RtspService::checkChannelsTask, this);
 }
 
 boost::system::error_code RtspService::createChannel(uint32_t uiChannelId, const std::string& sChannelName, 

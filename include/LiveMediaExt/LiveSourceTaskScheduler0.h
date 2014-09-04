@@ -51,7 +51,11 @@ public:
    * @brief deregisters a LiveMediaSubsession from the scheduler
    */
   void removeMediaSubsession(uint32_t uiChannelId, uint32_t uiSourceId, LiveMediaSubsession* pMediaSubsession);
-  
+  /**
+   * @brief processes all registered media subsessions
+   */
+  void processLiveMediaSessions();
+
 protected:
   LiveSourceTaskScheduler0(ChannelManager& channelManager);
 
@@ -65,8 +69,8 @@ private:
 	/// Packet manager that receives media packets from device/network interface
   ChannelManager& m_channelManager;
   /// Map which stores ALL media subsessions. Each subsession is identified via a unique ID
-  MediaSessionMap_t m_mMediaSubsessions;
+  MediaSessionMap_t m_mMediaSessions;
 };
 
-}
+} // lme
 

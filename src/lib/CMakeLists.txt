@@ -40,7 +40,6 @@ LiveAMRAudioDeviceSource.cpp
 LiveAMRAudioRTPSink.cpp
 LiveAMRSubsession.cpp
 LiveDeviceSource.cpp
-#LiveH264RtpSink.cpp
 LiveH264Subsession.cpp
 LiveH264VideoDeviceSource.cpp
 LiveMediaSubsession.cpp
@@ -54,7 +53,6 @@ LiveMediaExtPch.h
 ../../include/LiveMediaExt/LiveAMRAudioRTPSink.h
 ../../include/LiveMediaExt/LiveAMRSubsession.h
 ../../include/LiveMediaExt/LiveDeviceSource.h
-#../../include/LiveMediaExt/LiveH264RtpSink.h
 ../../include/LiveMediaExt/LiveH264Subsession.h
 ../../include/LiveMediaExt/LiveH264VideoDeviceSource.h
 ../../include/LiveMediaExt/LiveMediaSubsession.h
@@ -66,6 +64,7 @@ LiveMediaExtPch.h
 SET(MED_SRCS
 MediaTypes.cpp
 PacketManagerMediaChannel.cpp
+RtpTransmissionStats.cpp
 RtspService.cpp
 VirtualMediaSource.cpp
 )
@@ -73,11 +72,14 @@ SET(MED_HEADERS
 ../../include/Media/AudioChannelDescriptor.h
 ../../include/Media/ChannelManager.h
 ../../include/Media/FrameGrabber.h
+../../include/Media/IRateAdaptation.h
+../../include/Media/IRateAdaptationFactory.h
 ../../include/Media/MediaChannel.h
 ../../include/Media/MediaSample.h
 ../../include/Media/MediaSampleStorageBuffer.h
 ../../include/Media/MediaTypes.h
 ../../include/Media/PacketManagerMediaChannel.h
+../../include/Media/RtpTransmissionStats.h
 ../../include/Media/RtspService.h
 ../../include/Media/SimpleFrameGrabber.h
 ../../include/Media/SingleChannelManager.h

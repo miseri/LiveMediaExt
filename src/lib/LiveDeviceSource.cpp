@@ -3,21 +3,25 @@
 #include "GroupsockHelper.hh"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <Media/FrameGrabber.h>
+#include <Media/IRateAdaptation.h>
+#include <Media/IRateAdaptationFactory.h>
+#include <Media/IRateController.h>
 #include <Media/SimpleFrameGrabber.h>
 #include <LiveMediaExt/LiveMediaSubsession.h>
-//#include <artist/LiveMedia/LiveRtvcRtpSink.h>
 
 namespace lme
 {
 
-LiveDeviceSource* LiveDeviceSource::createNew(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, IMediaSampleBuffer* pSampleBuffer)
+LiveDeviceSource* LiveDeviceSource::createNew(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, 
+  IMediaSampleBuffer* pSampleBuffer, IRateAdaptationFactory* pRateAdaptationFactory, IRateController* pRateControl)
 {
   // When constructing a 'simple' LiveDeviceSource we'll just create a simple frame grabber
-  LiveDeviceSource* pSource = new LiveDeviceSource(env, uiClientId, pParent, new SimpleFrameGrabber(pSampleBuffer));
+  LiveDeviceSource* pSource = new LiveDeviceSource(env, uiClientId, pParent, new SimpleFrameGrabber(pSampleBuffer), pRateAdaptationFactory, pRateControl);
   return pSource;
 }
 
-LiveDeviceSource::LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, IFrameGrabber* pFrameGrabber)
+LiveDeviceSource::LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, 
+  IFrameGrabber* pFrameGrabber, IRateAdaptationFactory* pRateAdaptationFactory, IRateController* pRateControl)
 	: FramedSource(env),
   m_env(env),
   m_uiClientId(uiClientId),
@@ -25,19 +29,37 @@ LiveDeviceSource::LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, L
 	m_pFrameGrabber(pFrameGrabber),
 	m_bOffsetSet(false),
   m_dOffsetTime(0.0),
-	//m_pSink(NULL),
+	m_pSink(NULL),
  // m_bSourceUpdateOccurred(false),
-  m_bIsPlaying(false)
+  m_bIsPlaying(false),
+  m_pRateAdaptationFactory(pRateAdaptationFactory),
+  m_pRateAdaptation(NULL),
+  m_pRateControl(pRateControl),
+  m_uiLastPacketNumReceived(0)
 {
-  VLOG(2) << "Constructor: adding device source to parent subsession";
+  VLOG(10) << "Constructor: adding device source to parent subsession";
   m_pParentSubsession->addDeviceSource(this);
+  if (m_pRateAdaptationFactory)
+  {
+    m_pRateAdaptation = m_pRateAdaptationFactory->getInstance();
+  }
 }
 
 LiveDeviceSource::~LiveDeviceSource(void)
 {
-  VLOG(2) << "Destructor: removing device source from parent subsession";
+  VLOG(10) << "Destructor: removing device source from parent subsession";
   m_pParentSubsession->removeDeviceSource(this);
   if (m_pFrameGrabber) delete m_pFrameGrabber ; m_pFrameGrabber  = NULL;
+  if (m_pRateAdaptation)
+  {
+    assert(m_pRateAdaptationFactory);
+    m_pRateAdaptationFactory->releaseInstance(m_pRateAdaptation);
+  }
+
+  if (m_pRateControl)
+  {
+    delete m_pRateControl;
+  }
 }
 
 void LiveDeviceSource::doGetNextFrame()
@@ -183,7 +205,6 @@ void LiveDeviceSource::deliverFrame()
     fDurationInMicroseconds = 0;
   }
 
-//  VLOG(2) << "Calling FramedSource::afterGetting";
   // After delivering the data, inform the reader that it is now available:
   FramedSource::afterGetting(this);
 }
@@ -195,6 +216,51 @@ void LiveDeviceSource::doDeliverFrame( void* pInstance )
 	{
 		pSource->deliverFrame();
 	}
+}
+
+void LiveDeviceSource::processReceiverReports()
+{
+  VLOG(15) << "LiveDeviceSource::processReceiverReports()";
+  if (m_pRateAdaptation && m_pSink)
+  {
+    RTPTransmissionStatsDB::Iterator statsIter(m_pSink->transmissionStatsDB());
+    RTPTransmissionStats* stats = statsIter.next();
+    if (stats != NULL)
+    {
+      if (m_uiLastPacketNumReceived == stats->lastPacketNumReceived())
+      {
+        VLOG(15) << "LiveDeviceSource::processReceiverReports(): no new info";
+        // no new info
+        return;
+      }
+      m_uiLastPacketNumReceived = stats->lastPacketNumReceived();
+      // convert RtpTransmissionStats to our format
+      RtpTransmissionStats rtpStats;
+      rtpStats.LastPacketNumReceived = stats->lastPacketNumReceived();
+      rtpStats.FirstPacketNumReported = stats->firstPacketNumReported();
+      rtpStats.TotalPacketsLost = stats->totNumPacketsLost();
+      rtpStats.Jitter = stats->jitter();
+      rtpStats.LastSrTime = stats->lastSRTime();
+      rtpStats.DiffSrRr = stats->diffSR_RRTime();
+      rtpStats.Rtt = stats->roundTripDelay();
+
+      VLOG(2) << "Updating receiver stats: Last packet num received: " << m_uiLastPacketNumReceived;
+      lme::SwitchDirection eRateAdvice = m_pRateAdaptation->getRateAdaptAdvice(rtpStats);
+
+      // get hold of rate control interface
+      // If we switch for a single source - single client, this will be ok.
+      // In the case of multiple clients being connected, this will screw up the rate control as there is currently
+      // only one encoder in the media pipeline.
+      if (m_pRateControl)
+      {
+        m_pRateControl->controlBitrate(eRateAdvice);
+      }
+    }
+    else
+    {
+      VLOG(15) << "LiveDeviceSource::processReceiverReports(): stats null";
+    }
+  }
 }
 
 } // lme

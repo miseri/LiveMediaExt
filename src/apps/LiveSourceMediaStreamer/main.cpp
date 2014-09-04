@@ -103,6 +103,14 @@ int main(int argc, char** argv)
 
   RtspService rtspService(channelManager);
 
+  boost::system::error_code ec = rtspService.init();
+
+  if (ec)
+  {
+    LOG(WARNING) << "Failed to initialise RTSP service";
+    return -1;
+  }
+
   VLOG(2) << "Registering RTSP service";
   uint32_t uiRtspServiceId;
   bSuccess = serviceManager.registerService(boost::bind(&RtspService::start, boost::ref(rtspService)),
@@ -125,7 +133,7 @@ int main(int argc, char** argv)
 #else
 #ifdef AUDIO
   // Bogus audio descriptor for testing
-  boost::system::error_code ec = rtspService.createChannel(uiChannelId, sRtspUri, audioDescriptor);
+  ec = rtspService.createChannel(uiChannelId, sRtspUri, audioDescriptor);
   if (ec)
   {
     LOG(WARNING) << "Error creating RTSP service channel: " << ec.message();

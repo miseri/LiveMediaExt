@@ -12,6 +12,8 @@ SET(LiveMediaExt_BIN ${LiveMediaExt_SOURCE_DIR}/../bin)
 
 # set this to true to add the externals/live555-CMake projects to the solution
 SET(BUILD_LIVE555 true)
+# set this to true to add the externals/glog projects to the solution
+SET(BUILD_GLOG true)
 
 message("LiveMediaExt_SOURCE_DIR directories:" ${LiveMediaExt_SOURCE_DIR})
 #message("GLOG_DIR directories:" $ENV{GLOG_DIR})
@@ -34,15 +36,15 @@ ENDIF(WIN32)
 
 # only for windows.
 IF(WIN32)
-add_library( glog UNKNOWN IMPORTED )
+#add_library( glog UNKNOWN IMPORTED )
 #add_library( liveMedia UNKNOWN IMPORTED )
 #add_library( BasicUsageEnvironment UNKNOWN IMPORTED )
 #add_library( groupsock UNKNOWN IMPORTED )
 #add_library( UsageEnvironment UNKNOWN IMPORTED )
 
 # Define two import-locations: one for debug and one for release.
-set_target_properties( glog PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/glog/vsprojects/libglog/VC12/Debug/libglog.lib )
-set_target_properties( glog PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/glog/vsprojects/libglog/VC12/Release/libglog.lib )
+#set_target_properties( glog PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/glog/vsprojects/libglog/VC12/Debug/libglog.lib )
+#set_target_properties( glog PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/glog/vsprojects/libglog/VC12/Release/libglog.lib )
 #set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/BasicUsageEnvironment.lib )
 #set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/liveMedia.lib )
 #set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_DEBUG ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Debug/groupsock.lib )
@@ -52,6 +54,12 @@ set_target_properties( glog PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_
 #set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/groupsock.lib )
 #set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/UsageEnvironment.lib )
 ENDIF(WIN32)
+
+SET(GLOG_INCLUDE_DIR
+${LiveMediaExt_SOURCE_DIR}/../externals/glog
+${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows
+${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows/glog
+)
 
 SET(live555Includes
 ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/BasicUsageEnvironment/include
@@ -64,6 +72,7 @@ IF(WIN32)
 SET(LiveMediaExtIncludes
 ${LiveMediaExt_SOURCE_DIR}
 ${LiveMediaExt_SOURCE_DIR}/lib
+${LiveMediaExt_SOURCE_DIR}/libs
 ${LiveMediaExt_SOURCE_DIR}/../include/
 ${live555Includes}
 ${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows
@@ -75,6 +84,7 @@ ELSEIF(UNIX)
 SET(LiveMediaExtIncludes
 ${LiveMediaExt_SOURCE_DIR}
 ${LiveMediaExt_SOURCE_DIR}/lib
+${LiveMediaExt_SOURCE_DIR}/libs
 ${LiveMediaExt_SOURCE_DIR}/../include
 ${live555Includes}
 ${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows
@@ -107,7 +117,7 @@ IF(WIN32)
 # Do windows specific includes
 SET(LiveMediaExtLibs
 LiveMediaExt
-glog
+libglog
 )
 ELSEIF(APPLE)
 # Do apple specific includes
@@ -142,6 +152,11 @@ $ENV{CPP_UTIL_DIR}/include
 
 ADD_SUBDIRECTORY( apps)
 ADD_SUBDIRECTORY( lib) 
+ADD_SUBDIRECTORY( libs) 
+# HACK TO BUILD glog CMake project from this CMake project
+IF (BUILD_GLOG)
+ADD_SUBDIRECTORY (../externals/glog/src ${LiveMediaExt_SOURCE_DIR}/../projects-vs2013)
+ENDIF (BUILD_GLOG)
 # HACK TO BUILD LIVE555 CMake project from this CMake project
 IF (BUILD_LIVE555)
 ADD_SUBDIRECTORY (../externals/live555-CMake/live ${LiveMediaExt_SOURCE_DIR}/../projects-vs2013)

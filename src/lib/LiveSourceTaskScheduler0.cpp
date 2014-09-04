@@ -69,8 +69,8 @@ void LiveSourceTaskScheduler0::addMediaSubsession(uint32_t  uiChannelId, uint32_
 #ifdef DEBUG
   VLOG(2) << "LiveSourceTaskScheduler0::addMediaSubsession: " << uiChannelId << " source: " << uiSourceId;
 #endif
-  MediaSessionMap_t::iterator it = m_mMediaSubsessions.find(uiChannelId);
-  if (it != m_mMediaSubsessions.end())
+  MediaSessionMap_t::iterator it = m_mMediaSessions.find(uiChannelId);
+  if (it != m_mMediaSessions.end())
   {
     MediaSession_t::iterator it2 = it->second.find(uiSourceId);
     if (it2 != it->second.end())
@@ -89,7 +89,7 @@ void LiveSourceTaskScheduler0::addMediaSubsession(uint32_t  uiChannelId, uint32_
   {
     VLOG(5) << "Registering media subsession for channel: " << uiChannelId
       << " source: " << uiSourceId;
-    m_mMediaSubsessions[uiChannelId][uiSourceId] = pMediaSubsession;
+    m_mMediaSessions[uiChannelId][uiSourceId] = pMediaSubsession;
   }
 }
 
@@ -99,14 +99,14 @@ void LiveSourceTaskScheduler0::removeMediaSubsession(uint32_t  uiChannelId, uint
   VLOG(5) << "Trying to remove media subsession with channel: " << uiChannelId << " source: " << uiSourceId;
 #endif
 
-  MediaSessionMap_t::iterator it = m_mMediaSubsessions.find(uiChannelId);
-  if (it != m_mMediaSubsessions.end())
+  MediaSessionMap_t::iterator it = m_mMediaSessions.find(uiChannelId);
+  if (it != m_mMediaSessions.end())
   {
     MediaSession_t::iterator it2 = it->second.find(uiSourceId);
     if (it2 != it->second.end())
     {
       VLOG(5) << "Removing media subsession for channel: " << uiChannelId << " source: " << uiSourceId;
-      m_mMediaSubsessions.erase(it);
+      m_mMediaSessions.erase(it);
     }
     else
     {
@@ -125,7 +125,7 @@ void LiveSourceTaskScheduler0::processLiveSources()
   VLOG(2) << "Processing live sources";
 #endif
   // try and retrieve a sample for each channel
-  for (MediaSessionMap_t::iterator it = m_mMediaSubsessions.begin(); it != m_mMediaSubsessions.end(); ++it)
+  for (MediaSessionMap_t::iterator it = m_mMediaSessions.begin(); it != m_mMediaSessions.end(); ++it)
   {
 #ifdef DEBUG
     VLOG(2) << "Retrieving samples for channel: " << it->first;
@@ -152,6 +152,18 @@ void LiveSourceTaskScheduler0::processLiveSources()
         VLOG(2) << "Done calling addMediaSample for channel " << it->first << " source " << it2->first << " PTS: " << pMediaSample->getPresentationTime();
 #endif
       }
+    }
+  }
+}
+
+void LiveSourceTaskScheduler0::processLiveMediaSessions()
+{
+  VLOG(15) << "LiveSourceTaskScheduler0::processLiveMediaSessions()";
+  for (MediaSessionMap_t::iterator it = m_mMediaSessions.begin(); it != m_mMediaSessions.end(); ++it)
+  {
+    for (MediaSession_t::iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2)
+    {
+      it2->second->processClientStatistics();
     }
   }
 }

@@ -1,7 +1,6 @@
 #include "LiveMediaExtPch.h"
 #include <LiveMediaExt/LiveH264Subsession.h>
 #include <LiveMediaExt/LiveDeviceSource.h>
-//#include <LiveMedia/LiveH264RtpSink.h>
 #include <LiveMediaExt/LiveH264VideoDeviceSource.h>
 #include <H264VideoRTPSink.hh>
 #include "Base64.hh"
@@ -13,8 +12,10 @@ namespace lme
 LiveH264Subsession::LiveH264Subsession( UsageEnvironment& env, LiveRtspServer& rParent, 
                                         const unsigned uiChannelId, unsigned uiSourceId, 
                                         const std::string& sSessionName,
-                                        const std::string& sSps, const std::string& sPps)
-  :LiveMediaSubsession(env, rParent, uiChannelId, uiSourceId, sSessionName, true, 1),
+                                        const std::string& sSps, const std::string& sPps, 
+                                        IRateAdaptationFactory* pFactory,
+                                        IRateController* pGlobalRateControl)
+  :LiveMediaSubsession(env, rParent, uiChannelId, uiSourceId, sSessionName, true, 1, pFactory, pGlobalRateControl),
   m_sSps(sSps),
   m_sPps(sPps),
   fAuxSDPLine(NULL),
@@ -29,12 +30,14 @@ LiveH264Subsession::~LiveH264Subsession()
   delete[] fFmtpSDPLine;
 }
 
-FramedSource* LiveH264Subsession::createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer)
+FramedSource* LiveH264Subsession::createSubsessionSpecificSource(unsigned clientSessionId, 
+                                                                 IMediaSampleBuffer* pMediaSampleBuffer, 
+                                                                 IRateAdaptationFactory* pRateAdaptationFactory,
+                                                                 IRateController* pRateControl)
 {
-  // Create standard device source
-  //return LiveDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer );
-  FramedSource* pLiveDeviceSource = LiveH264VideoDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer, m_sSps, m_sPps);
-
+  FramedSource* pLiveDeviceSource = LiveH264VideoDeviceSource::createNew(envir(), clientSessionId, this, m_sSps, m_sPps, 
+                                                                         pMediaSampleBuffer, pRateAdaptationFactory, pRateControl);
+  // wrap framer around our device source
   H264VideoStreamDiscreteFramer* pFramer = H264VideoStreamDiscreteFramer::createNew(envir(), pLiveDeviceSource);
   return pFramer;
 }
@@ -45,25 +48,17 @@ void LiveH264Subsession::setEstimatedBitRate(unsigned& estBitrate)
 	estBitrate = 1000;
 }
 
-RTPSink* LiveH264Subsession::createNewRTPSink( Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource )
+RTPSink* LiveH264Subsession::createSubsessionSpecificRTPSink( Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource )
 {
+  // HACKERY
   std::string sPropParameterSets = m_sSps + "," + m_sPps;
   H264VideoRTPSink* pSink = H264VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, sPropParameterSets.c_str());
-	// TODO: What packet sizes should be set?!?
 	pSink->setPacketSizes(1000, 1400);
 	return pSink;
 }
 
 char const* LiveH264Subsession::getAuxSDPLine( RTPSink* rtpSink, FramedSource* inputSource )
 {
-  // Trying to use different setup method that live555 H264 file source
-  //fAuxSDPLine = strDup(rtpSink->auxSDPLine());
-  //return fAuxSDPLine;
-  
-  //u_int8_t* sps; unsigned spsSize;
-  //u_int8_t* pps; unsigned ppsSize;
-  //framerSource->getSPSandPPS(sps, spsSize, pps, ppsSize);
-  //if (sps == NULL || pps == NULL) return NULL; // our source isn't ready
   const char* sps = m_sSps.c_str();
   unsigned spsSize = m_sSps.length();
 
@@ -79,26 +74,6 @@ char const* LiveH264Subsession::getAuxSDPLine( RTPSink* rtpSink, FramedSource* i
 
   // The parameter sets are base64 encoded already
   // Set up the "a=fmtp:" SDP line for this stream:
-#if 0
-  char* sps_base64 = base64Encode((char*)sps, spsSize);
-  char* pps_base64 = base64Encode((char*)pps, ppsSize);
-
-  char const* fmtpFmt =
-    "a=fmtp:%d packetization-mode=1"
-    ";profile-level-id=%06X"
-    ";sprop-parameter-sets=%s,%s\r\n";
-  unsigned fmtpFmtSize = strlen(fmtpFmt)
-    + 3 /* max char len */
-    + 6 /* 3 bytes in hex */
-    + strlen(sps_base64) + strlen(pps_base64);
-  char* fmtp = new char[fmtpFmtSize];
-  sprintf(fmtp, fmtpFmt,
-    rtpSink->rtpPayloadType(),
-    profile_level_id,
-    sps_base64, pps_base64);
-  delete[] sps_base64;
-  delete[] pps_base64;
-#else
   char const* fmtpFmt =
     "a=fmtp:%d packetization-mode=1"
     ";profile-level-id=%06X"
@@ -112,12 +87,9 @@ char const* LiveH264Subsession::getAuxSDPLine( RTPSink* rtpSink, FramedSource* i
     rtpSink->rtpPayloadType(),
     profile_level_id,
     sps, pps);
-#endif
 
   delete[] fFmtpSDPLine; fFmtpSDPLine = fmtp;
   return fFmtpSDPLine;
 }
 
 } // lme
-
-

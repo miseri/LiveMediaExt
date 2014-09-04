@@ -40,8 +40,9 @@ public:
                                           const std::string& sSessionName,
                                           const unsigned uiChannelId,
                                           unsigned uiSubsessionId,
-                                          const VideoChannelDescriptor& videoDescriptor
-                                          )
+                                          const VideoChannelDescriptor& videoDescriptor,
+                                          IRateAdaptationFactory* pFactory,
+                                          IRateController* pRateControl)
   {
     VLOG(2) << "Creating new LiveMediaSubsession " << sSessionName 
             << " Channel Id: " << uiChannelId
@@ -55,7 +56,8 @@ public:
       pMediaSubsession = new LiveH264Subsession(env, rRtspServer,
         uiChannelId, uiSubsessionId,
         sSessionName,
-        videoDescriptor.Sps, videoDescriptor.Pps);
+        videoDescriptor.Sps, videoDescriptor.Pps, 
+        pFactory, pRateControl);
     }
     else
     {
@@ -74,8 +76,9 @@ public:
                                                     const std::string& sSessionName,
                                                     const unsigned uiChannelId,
                                                     unsigned uiSubsessionId,
-                                                    const AudioChannelDescriptor& audioDescriptor
-    )
+                                                    const AudioChannelDescriptor& audioDescriptor,
+                                                    IRateAdaptationFactory* pFactory,
+                                                    IRateController* pRateControl)
   {
     VLOG(2) << "Creating new audio LiveMediaSubsession " << sSessionName
             << " Channel Id: " << uiChannelId
@@ -90,7 +93,8 @@ public:
       pMediaSubsession = new LiveAMRSubsession(env, rRtspServer,
         uiChannelId, uiSubsessionId,
         sSessionName,
-        audioDescriptor.Channels, audioDescriptor.BitsPerSample, audioDescriptor.SamplingFrequency);
+        audioDescriptor.Channels, audioDescriptor.BitsPerSample, audioDescriptor.SamplingFrequency, 
+        pFactory, pRateControl);
     }
     else
     {
@@ -99,10 +103,6 @@ public:
     }
     return pMediaSubsession;
   }
-
-private:
-
-
 };
 
 } // lme

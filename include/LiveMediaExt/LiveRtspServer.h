@@ -15,6 +15,13 @@
 namespace lme
 {
 
+// fwd
+class IRateAdaptationFactory;
+class IRateController;
+
+/**
+ * @brief Channel descriptor
+ */
 struct Channel
 {
   Channel()
@@ -53,7 +60,7 @@ struct Channel
 };
 
 /**
- * Our Rtsp server class is derived from the liveMedia RTSP server. It extends the live555 RTSP server
+ * Our RTSP server class is derived from the liveMedia RTSP server. It extends the live555 RTSP server
  * to stream live media sessions.
  */
 class LiveRtspServer: public RTSPServer
@@ -63,7 +70,8 @@ public:
 	/**
    * @brief Named constructor
    */
-  static LiveRtspServer* createNew(UsageEnvironment& env, Port ourPort = 554, UserAuthenticationDatabase* authDatabase = NULL);
+  static LiveRtspServer* createNew(UsageEnvironment& env, Port ourPort = 554, UserAuthenticationDatabase* authDatabase = NULL,
+                                   IRateAdaptationFactory* pFactory = NULL, IRateController* pGlobalRateControl = NULL);
 
   unsigned getMaxConnectedClients() const;
   void setMaxConnectedClients(unsigned val);
@@ -82,7 +90,6 @@ protected:
   class LiveRTSPClientSession;
   /**
    * @brief Subclassing this to make the client address acessible and add handleCmd_notEnoughBandwidth.
-   * 
    */
   class LiveRTSPClientConnection : public RTSPClientConnection
   {
@@ -232,7 +239,8 @@ private:
 	/**
    * @brief Constructor: called only by createNew();
    */
-	LiveRtspServer( UsageEnvironment& env, int ourSocket, Port ourPort, UserAuthenticationDatabase* authDatabase);
+  LiveRtspServer(UsageEnvironment& env, int ourSocket, Port ourPort, UserAuthenticationDatabase* authDatabase, 
+                 IRateAdaptationFactory* pFactory, IRateController* pGlobalRateControl);
 	/**
    * @brief Destructor
    */
@@ -254,6 +262,10 @@ private:
   /// maximum permitted number of clients that can be served by this RTSP server
   /// a value of 0 means that no restrictions exist
   unsigned m_uiMaxConnectedClients;
+  /// adaptation factory 
+  IRateAdaptationFactory* m_pFactory;
+  /// Rate control
+  IRateController* m_pGlobalRateControl;
 };
 
 } // lme

@@ -6,6 +6,7 @@
 #endif
 #include <Media/MediaSample.h>
 
+
 namespace lme
 {
 
@@ -13,6 +14,8 @@ namespace lme
 class IMediaSampleBuffer;
 class LiveDeviceSource;
 class LiveRtspServer;
+class IRateAdaptationFactory;
+class IRateController;
 
 // Typedefs
 typedef std::vector<LiveDeviceSource*> LiveDeviceSourcePtrList_t;
@@ -57,20 +60,38 @@ public:
 
   //std::vector<unsigned> getConnectedClientIds() const;
 
+  /**
+   * @brief This method processes the received receiver reports
+   */
+  void processClientStatistics();
 protected:
 
   /// This method must be overridden by subclasses
   /// @param clientSessionId [in] The id assigned to the client by live555
   /// @param pMediaSampleBuffer [in] The media sample buffer that the device 
   ///        source will retrieve sample from
-  virtual FramedSource* createSubsessionSpecificSource(unsigned clientSessionId, IMediaSampleBuffer* pMediaSampleBuffer) = 0;
+  /// @param pRateAdaptationFactory Factory used to create rate adaptation module
+  /// @param pRateControl Rate control to be used for subsession. This allows the subsession to
+  ///        create different rate-control mechanisms based on the type of media subsession.
+  virtual FramedSource* createSubsessionSpecificSource(unsigned clientSessionId,
+                                                       IMediaSampleBuffer* pMediaSampleBuffer, 
+                                                       IRateAdaptationFactory* pRateAdaptationFactory,
+                                                       IRateController* pRateControl) = 0;
+
+  /// This method must be overridden by subclasses
+  /// The implementation should be the same as for createNewRTPSink. We intercept the method.
+  virtual RTPSink* createSubsessionSpecificRTPSink(Groupsock* rtpGroupsock, 
+                                                   unsigned char rtpPayloadTypeIfDynamic, 
+                                                   FramedSource* inputSource) = 0;
 
 	/// The uiChannelId + uiSubsessionID is used to allow this register itself with the scheduler on construction
 	/// and to deregister itself from the scheduler on destruction
 	LiveMediaSubsession(UsageEnvironment& env, LiveRtspServer& rParent, 
                           const unsigned uiChannelId, unsigned uiSourceID, 
                           const std::string& sSessionName, 
-                          bool bVideo, const unsigned uiTotalChannels = 1 );
+                          bool bVideo, const unsigned uiTotalChannels = 1,
+                          IRateAdaptationFactory* pFactory = NULL,
+                          IRateController* pGlobalRateControl = NULL);
 
 	/// Subclasses must override this instead of createNewStreamSource
 	virtual void setEstimatedBitRate(unsigned& estBitrate) = 0;
@@ -79,7 +100,7 @@ protected:
 	virtual FramedSource* createNewStreamSource(unsigned clientSessionId, unsigned& estBitrate);
 
 	/// Overridden from OnDemandServermediaSubsession for RTP sink creation. "estBitrate" is the stream's estimated bitrate, in kbps
-	virtual RTPSink* createNewRTPSink(Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource) = 0;
+	virtual RTPSink* createNewRTPSink(Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource);
 
 	/// Overridden so that we can store the client connection info of connecting RTP clients
 	virtual void getStreamParameters(unsigned clientSessionId,
@@ -119,6 +140,10 @@ protected:
   unsigned m_uiTotalChannels;
   /// Buffer for the samples
   IMediaSampleBuffer* m_pSampleBuffer;
+  /// Rate adaptation factory
+  IRateAdaptationFactory* m_pFactory;
+  /// Global rate control: depending on the type of rate control i.e. per source or per client.
+  IRateController* m_pGlobalRateControl;
 };
 
 typedef std::vector<LiveMediaSubsession*> LiveMediaSubsessionPtrList_t; 
