@@ -74,6 +74,7 @@ SET(MED_HEADERS
 ../../include/Media/FrameGrabber.h
 ../../include/Media/IRateAdaptation.h
 ../../include/Media/IRateAdaptationFactory.h
+../../include/Media/IRateController.h
 ../../include/Media/MediaChannel.h
 ../../include/Media/MediaSample.h
 ../../include/Media/MediaSampleStorageBuffer.h
