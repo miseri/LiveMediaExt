@@ -56,10 +56,12 @@ LiveDeviceSource::~LiveDeviceSource(void)
     m_pRateAdaptationFactory->releaseInstance(m_pRateAdaptation);
   }
 
-  if (m_pRateControl)
-  {
-    delete m_pRateControl;
-  }
+  // NB: TODO: Rate control not necessarily owned by source?!?
+  // This is especially the case with one non-switching codec per multiple clients
+  //if (m_pRateControl)
+  //{
+  //  delete m_pRateControl;
+  //}
 }
 
 void LiveDeviceSource::doGetNextFrame()
