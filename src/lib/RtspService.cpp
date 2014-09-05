@@ -2,19 +2,18 @@
 #include <Media/RtspService.h>
 #include <LiveMediaExt/LiveSourceTaskScheduler.h>
 #include <LiveMediaExt/LiveRtspServer.h>
-#include <SimpleRateAdaptation/SimpleRateAdaptationFactory.h>
 
 namespace lme
 {
 
-RtspService::RtspService(ChannelManager& channelManager, IRateController* pGlobalRateControl)
+RtspService::RtspService(ChannelManager& channelManager, IRateAdaptationFactory* pFactory, IRateController* pGlobalRateControl)
   :m_channelManager(channelManager),
   m_cEventloop(0),
   m_pRtspServer(NULL),
   m_pScheduler(NULL),
   m_pEnv(NULL),
   m_bEventLoopRunning(false),
-  m_pFactory(NULL),
+  m_pFactory(pFactory),
   m_pGlobalRateControl(pGlobalRateControl)
 {
 
@@ -23,8 +22,6 @@ RtspService::RtspService(ChannelManager& channelManager, IRateController* pGloba
 boost::system::error_code RtspService::init()
 {
   VLOG(2) << "Initialising RTSP service";
-  // rate adaptation module
-  m_pFactory = new SimpleRateAdaptationFactory();
   // init live555 environment
   // Setup the liveMedia environment
   m_pScheduler = LiveSourceTaskScheduler::createNew(m_channelManager);
@@ -116,11 +113,6 @@ void RtspService::cleanupLiveMediaEnvironment()
   m_pEnv->reclaim();
   if (m_pScheduler) delete m_pScheduler; m_pScheduler = NULL;
   VLOG(2) << "Clean up done";
-
-  if (m_pFactory)
-  {
-    delete m_pFactory;
-  }
 }
 
 void RtspService::checkSessionsTask(void* clientData)

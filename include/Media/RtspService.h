@@ -35,7 +35,7 @@ public:
   /**
    * @brief Constructor
    */
-  RtspService(ChannelManager& channelManager, IRateController* pGlobalRateControl = NULL );
+  RtspService(ChannelManager& channelManager, IRateAdaptationFactory* pFactory = NULL, IRateController* pGlobalRateControl = NULL);
   /**
    * @brief Initialises live555 components
    */

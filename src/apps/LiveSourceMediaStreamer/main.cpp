@@ -8,6 +8,7 @@
 #include <Media/SingleChannelManager.h>
 #include <Media/RtspService.h>
 #include <Media/VirtualMediaSource.h>
+#include <SimpleRateAdaptation/SimpleRateAdaptationFactory.h>
 
 using namespace lme;
 
@@ -101,7 +102,8 @@ int main(int argc, char** argv)
   }
 #endif
 
-  RtspService rtspService(channelManager);
+  IRateAdaptationFactory* pFactory = new SimpleRateAdaptationFactory();
+  RtspService rtspService(channelManager, pFactory);
 
   boost::system::error_code ec = rtspService.init();
 
@@ -153,5 +155,6 @@ int main(int argc, char** argv)
 
   LOG(INFO) << "Complete.";
 
+  delete pFactory;
   return 0;
 }
