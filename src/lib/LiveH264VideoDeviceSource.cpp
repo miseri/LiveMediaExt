@@ -55,7 +55,7 @@ std::deque<MediaSample> LiveH264VideoDeviceSource::splitPayloadIntoMediaSamples(
         unsigned uiNalUnitSize = i - uiStartingPos;
         printNalInfo(pBuffer + uiStartingPos, uiNalUnitSize);
 
-        VLOG(5) << "Found start code at pos " << i << " - storing NAL starting at: " << uiStartingPos << " Size: " << uiNalUnitSize;
+        VLOG(15) << "Found start code at pos " << i << " - storing NAL starting at: " << uiStartingPos << " Size: " << uiNalUnitSize;
         // found next starting pos, push previous NAL
         MediaSample mediaSample;
         mediaSample.setPresentationTime(dPts);
@@ -72,7 +72,7 @@ std::deque<MediaSample> LiveH264VideoDeviceSource::splitPayloadIntoMediaSamples(
     unsigned uiNalUnitSize = uiSize - uiStartingPos;
     printNalInfo(pBuffer + uiStartingPos, uiNalUnitSize);
 
-    VLOG(5) << "Pushing final NAL - storing NAL starting at: " << uiStartingPos << " Size: " << uiNalUnitSize;
+    VLOG(15) << "Pushing final NAL - storing NAL starting at: " << uiStartingPos << " Size: " << uiNalUnitSize;
     MediaSample mediaSample;
     mediaSample.setPresentationTime(dPts);
     BYTE* pData = new uint8_t[uiNalUnitSize];
@@ -80,7 +80,7 @@ std::deque<MediaSample> LiveH264VideoDeviceSource::splitPayloadIntoMediaSamples(
     Buffer dataBuffer(pData, uiNalUnitSize);
     mediaSample.setData(dataBuffer);
     mediaSamples.push_back(mediaSample);
-    VLOG(5) << "Multiple NAL units found: " << mediaSamples.size() << " Sample size : " << uiSize;
+    VLOG(15) << "Multiple NAL units found: " << mediaSamples.size() << " Sample size : " << uiSize;
   }
   return mediaSamples;
 }
