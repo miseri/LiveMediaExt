@@ -30,7 +30,6 @@ LiveDeviceSource::LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, L
 	m_bOffsetSet(false),
   m_dOffsetTime(0.0),
 	m_pSink(NULL),
- // m_bSourceUpdateOccurred(false),
   m_bIsPlaying(false),
   m_pRateAdaptationFactory(pRateAdaptationFactory),
   m_pRateAdaptation(NULL),

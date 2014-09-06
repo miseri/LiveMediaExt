@@ -78,9 +78,6 @@ public:
 
   bool isPlaying() const { return m_bIsPlaying; }
 
- // // HACK: method that should show if the device source was updated. Used for notification
- // bool sourceUpdateOccurred() const { return m_bSourceUpdateOccurred; }
-
 protected:
   LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, 
                    IFrameGrabber* pFrameGrabber, IRateAdaptationFactory* pRateAdaptationFactory, IRateController* pRateControl);
@@ -100,18 +97,10 @@ protected:
   IFrameGrabber* m_pFrameGrabber;
 	// queue for outgoing samples
 	std::deque<MediaSample> m_qMediaSamples;
-//	/// Related RTP Sink
-//	//LiveRtvcRtpSink* m_pSink;
-  /// live555 RTP sink
+  /// Storing pointer to RTP Sink so that we can access stats DB
   RTPSink* m_pSink;
-//  // HACK for client quality updates
-//  // Needs to be refactored
-//  // Using this var in SwitchingDeviceSource: if the quality switches this flag is set so that 
-//  // the ClientSessionManager can be notified of the change in quality.
-//  // This hack is required to get DESCRIBE_CLIENTS to work
-//  bool m_bSourceUpdateOccurred;
-//
-//private:
+
+private:
 	/// Start time offsets
 	bool m_bOffsetSet;
 	struct timeval m_tOffsetTime;
