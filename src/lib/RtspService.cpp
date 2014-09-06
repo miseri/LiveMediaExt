@@ -3,6 +3,11 @@
 #include <LiveMediaExt/LiveSourceTaskScheduler.h>
 #include <LiveMediaExt/LiveRtspServer.h>
 
+// #define TEST_STREAMS
+#ifdef TEST_STREAMS
+#include "liveMedia.hh"
+#endif
+
 namespace lme
 {
 
@@ -41,6 +46,39 @@ boost::system::error_code RtspService::init()
   m_pRtspServer->disableStreamingRTPOverTCP();
 #endif
 
+  // taken from testOnDemandRTSPServer
+#ifdef TEST_STREAMS
+  char const* descriptionString
+    = "Session streamed by \"testOnDemandRTSPServer\"";
+
+  // An AAC audio stream (ADTS-format file):
+  {
+    char const* streamName = "aacAudioTest";
+    char const* inputFileName = "test.aac";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*m_pEnv, streamName, streamName,
+      descriptionString);
+    sms->addSubsession(ADTSAudioFileServerMediaSubsession
+      ::createNew(*m_pEnv, inputFileName, false));
+    m_pRtspServer->addServerMediaSession(sms);
+
+    //announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // An AMR audio stream:
+  {
+    char const* streamName = "amrAudioTest";
+    char const* inputFileName = "test.amr";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*m_pEnv, streamName, streamName,
+      descriptionString);
+    sms->addSubsession(AMRAudioFileServerMediaSubsession
+      ::createNew(*m_pEnv, inputFileName, false));
+    m_pRtspServer->addServerMediaSession(sms);
+
+    // announceStream(m_pRtspServer, sms, streamName, inputFileName);
+  }
+#endif
   // Add task that checks if there's new data in the queue
   checkSessionsTask(this);
   checkChannelsTask(this);
