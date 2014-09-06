@@ -34,8 +34,8 @@ LiveAMRSubsession::~LiveAMRSubsession()
 
 FramedSource* LiveAMRSubsession::createSubsessionSpecificSource(unsigned clientSessionId, 
                                                                 IMediaSampleBuffer* pMediaSampleBuffer, 
-                                                                IRateAdaptationFactory* pRateAdaptationFactory,
-                                                                IRateController* pRateControl)
+                                                                IRateAdaptationFactory* /*pRateAdaptationFactory*/,
+                                                                IRateController* /*pRateControl*/)
 {
   return LiveAMRAudioDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer, 
     NULL /* no rate adaptation for AMR */, 
@@ -44,8 +44,8 @@ FramedSource* LiveAMRSubsession::createSubsessionSpecificSource(unsigned clientS
 
 void LiveAMRSubsession::setEstimatedBitRate( unsigned& estBitrate )
 {
-	// Set estimated session band width (add 500 for integer arith rounding)
-	estBitrate = (m_bitsPerSecond + 500)/1000;
+	// Set estimated session band width
+	estBitrate = 13;
 }
 
 RTPSink* LiveAMRSubsession::createSubsessionSpecificRTPSink(Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource)
