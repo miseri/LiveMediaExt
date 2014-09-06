@@ -71,10 +71,10 @@ LiveMediaSubsession::~LiveMediaSubsession()
 	// Deregister from Scheduler
 	TaskScheduler* pScheduler = &(envir().taskScheduler());
 	// TOREVISE: replace dynamic cast here with static since we know that's always the case
-	LiveSourceTaskScheduler* pPollingScheduler = dynamic_cast<LiveSourceTaskScheduler*>(pScheduler);
-	if (pPollingScheduler)
+	LiveSourceTaskScheduler* pLiveScheduler = dynamic_cast<LiveSourceTaskScheduler*>(pScheduler);
+  if (pLiveScheduler)
 	{
-		pPollingScheduler->removeMediaSubsession(m_uiChannelId, m_uiSourceID, this);
+    pLiveScheduler->removeMediaSubsession(m_uiChannelId, m_uiSourceID, this);
 	}
 
   if ( m_pSampleBuffer ) delete m_pSampleBuffer; m_pSampleBuffer = NULL;
