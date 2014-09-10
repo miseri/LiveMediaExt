@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <BasicUsageEnvironment.hh>
+#include <boost/function.hpp>
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/system/error_code.hpp>
@@ -18,6 +19,12 @@ namespace lme
 // fwd
 class IRateAdaptationFactory;
 class IRateController;
+
+/**
+ * @brief Callback for when a client session is PLAYed.
+ * @param client session id
+ */
+typedef boost::function<void(unsigned)> OnClientSessionPlayHandler;
 
 /**
  * @brief Channel descriptor
@@ -72,20 +79,38 @@ public:
    */
   static LiveRtspServer* createNew(UsageEnvironment& env, Port ourPort = 554, UserAuthenticationDatabase* authDatabase = NULL,
                                    IRateAdaptationFactory* pFactory = NULL, IRateController* pGlobalRateControl = NULL);
-
+  /**
+   * @brief Getter for max connected clients
+   */
   unsigned getMaxConnectedClients() const;
+  /**
+   * @brief Setter for max connected clients
+   */
   void setMaxConnectedClients(unsigned val);
-
+  /**
+   * @brief Getter for number of connected clients
+   */
   unsigned getNumberOfConnectedClients() const { return m_mRtspClientSessions.size(); }
-
-	/// adds an RTSP session for the transcoder session provided the transcoder session exists in the transcoder manager
+	/**
+   * @brief adds the RTSP session described by channel to the RTSP server if it doesn't already exist.
+   */
 	void addRtspMediaSession(const Channel& channel);
-	/// removes an RTSP session for the corresponding transcoder session from the RTSP server
+	/**
+   * @brief removes the RTSP session described by channel from the RTSP server.
+   */
   void removeRtspMediaSession(const Channel& channel);
+  /**
+   * @brief Setter for notifications when a client session is issues the PLAY command to the RTSP server.
+   */
+  void setOnClientSessionPlayCallback(OnClientSessionPlayHandler onClientSessionPlay){ m_onClientSessionPlay = onClientSessionPlay; }
 
 protected:
   void endServerSession(const std::string& sSessionName);
-
+  /**
+   * @brief This is called when the client session processes the 
+   * RTSP PLAY request.
+   */
+  void onRtspClientSessionPlay(unsigned uiClientSessionId);
 protected:
   class LiveRTSPClientSession;
   /**
@@ -138,11 +163,16 @@ protected:
     {
       // We need to check if the parent is still valid
       // in the case where the client session outlives the
-      // RTSPServer child class implementation!
+      // RTSPServer child class implementation! In that case
+      // the RTSPServer destructor deletes all the client 
+      // sessions, but at this point m_pParent is not valid 
+      // anymore. This is the reason for the orphan method.
       if (m_pParent)
         m_pParent->removeClientSession(m_uiSessionId);
     }
-
+    /**
+     * @brief invalidates the pointer to the LiveRtspServer object.
+     */
     void orphan()
     {
       m_pParent = NULL;
@@ -197,6 +227,17 @@ protected:
         RTSPClientSession::handleCmd_SETUP(ourClientConnection, urlPreSuffix, urlSuffix, fullRequestStr);
         return;
       }
+    }
+    /**
+     * @brief Overriding this to fire off a callback informing the RTSP service that a new client has PLAYed the stream.
+     *
+     * This is useful in the case of a live media pipeline as it allows e.g. IDR frame generation.
+     */
+    virtual void handleCmd_PLAY(RTSPClientConnection* ourClientConnection,
+      ServerMediaSubsession* subsession, char const* fullRequestStr)
+    {
+      m_pParent->onRtspClientSessionPlay(m_uiSessionId);
+      RTSPClientSession::handleCmd_PLAY(ourClientConnection, subsession, fullRequestStr);
     }
 
     LiveRtspServer* m_pParent;
@@ -266,6 +307,8 @@ private:
   IRateAdaptationFactory* m_pFactory;
   /// Rate control
   IRateController* m_pGlobalRateControl;
+  /// On client session play callback
+  OnClientSessionPlayHandler m_onClientSessionPlay;
 };
 
 } // lme
