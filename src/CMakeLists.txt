@@ -10,13 +10,19 @@ SET(RUNTIME_OUTPUT_DIRECTORY ${LiveMediaExt_SOURCE_DIR}/../bin)
 
 SET(LiveMediaExt_BIN ${LiveMediaExt_SOURCE_DIR}/../bin)
 
+IF(WIN32)
 # set this to true to add the externals/live555-CMake projects to the solution
 SET(BUILD_LIVE555 true)
 # set this to true to add the externals/glog projects to the solution
 SET(BUILD_GLOG true)
+ELSE(WIN32)
+# set this to true to add the externals/live555-CMake projects to the solution
+SET(BUILD_LIVE555 false)
+# set this to true to add the externals/glog projects to the solution
+SET(BUILD_GLOG false)
+ENDIF(WIN32)
 
 message("LiveMediaExt_SOURCE_DIR directories:" ${LiveMediaExt_SOURCE_DIR})
-#message("GLOG_DIR directories:" $ENV{GLOG_DIR})
 message("BOOST_INCLUDE_DIR:" $ENV{BOOST_INCLUDE_DIR})
 
 IF(WIN32)
@@ -32,6 +38,15 @@ set(MSVC_VER VC10)
 ELSE(MSVC12)
 message("WARNING: Unknown/unsupported MSVC version")
 ENDIF(MSVC12)
+ELSE(WIN32)
+ADD_DEFINITIONS(-std=c++11)
+if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+# 64bit
+  SET(CMAKE_CXX_FLAGS "-fPIC")
+else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+# 32 bit
+endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+
 ENDIF(WIN32)
 
 # only for windows.
@@ -55,18 +70,26 @@ IF(WIN32)
 #set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/lib/Release/UsageEnvironment.lib )
 ENDIF(WIN32)
 
+IF(WIN32)
 SET(GLOG_INCLUDE_DIR
 ${LiveMediaExt_SOURCE_DIR}/../externals/glog
 ${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows
 ${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows/glog
 )
-
 SET(live555Includes
 ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/BasicUsageEnvironment/include
 ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/groupsock/include
 ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/liveMedia/include
 ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/UsageEnvironment/include
 )
+ELSE(WIN32)
+SET(live555Includes
+${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/BasicUsageEnvironment/include
+${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/groupsock/include
+${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/liveMedia/include
+${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/UsageEnvironment/include
+)
+ENDIF(WIN32)
 
 IF(WIN32)
 SET(LiveMediaExtIncludes
@@ -87,7 +110,6 @@ ${LiveMediaExt_SOURCE_DIR}/lib
 ${LiveMediaExt_SOURCE_DIR}/libs
 ${LiveMediaExt_SOURCE_DIR}/../include
 ${live555Includes}
-${LiveMediaExt_SOURCE_DIR}/../externals/glog/src/windows
 ${LiveMediaExt_SOURCE_DIR}/../externals/cpp-util/include
 /usr/local/include
 )
@@ -104,7 +126,7 @@ $ENV{BOOST_LIB_DIR}
 ELSEIF(UNIX)
 SET(LiveMediaExtLink
 ${LiveMediaExt_SOURCE_DIR}/../lib
-${BOOST_LIB_DIR}
+#${BOOST_LIB_DIR}
 /usr/local/lib
 /usr/lib
 )
@@ -145,10 +167,10 @@ $ENV{BOOST_LIB_DIR}
 message("LibDir directories:" ${LibDir})
 
 # Include directories
-INCLUDE_DIRECTORIES(
-${LiveMediaExt_SOURCE_DIR}/../include
-$ENV{CPP_UTIL_DIR}/include
-)
+#INCLUDE_DIRECTORIES(
+#${LiveMediaExt_SOURCE_DIR}/../include
+#$ENV{CPP_UTIL_DIR}/include
+#)
 
 ADD_SUBDIRECTORY( apps)
 ADD_SUBDIRECTORY( lib) 
