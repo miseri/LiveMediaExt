@@ -45,6 +45,8 @@ boost::system::error_code RtspService::init()
   // disable TCP streaming for testing
   m_pRtspServer->disableStreamingRTPOverTCP();
 #endif
+  // set notification for PLAY requests
+  m_pRtspServer->setOnClientSessionPlayCallback(boost::bind(&RtspService::onRtspClientSessionPlay, this, _1));
 
   // taken from testOnDemandRTSPServer
 #ifdef TEST_STREAMS
@@ -271,6 +273,11 @@ boost::system::error_code RtspService::removeChannel(uint32_t uiChannelId)
     return boost::system::error_code(boost::system::errc::no_such_file_or_directory, boost::system::get_generic_category());
   }
   return boost::system::error_code();
+}
+
+void RtspService::onRtspClientSessionPlay(unsigned uiClientSessionId)
+{
+  if (m_onClientSessionPlay) m_onClientSessionPlay(uiClientSessionId);
 }
 
 } //lme

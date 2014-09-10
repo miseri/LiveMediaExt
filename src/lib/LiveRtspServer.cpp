@@ -293,5 +293,10 @@ void LiveRtspServer::setMaxConnectedClients( unsigned val )
 #pragma chMSG(TODO: if val is less than previous value kick oldest clients to meet requirement)
 }
 
+void LiveRtspServer::onRtspClientSessionPlay(unsigned uiClientSessionId)
+{
+  if (m_onClientSessionPlay) m_onClientSessionPlay(uiClientSessionId);
+}
+
 } // lme
 
