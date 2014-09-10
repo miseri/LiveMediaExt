@@ -72,6 +72,14 @@ public:
    * This results in a ServerMediaSession being removed from the RTSP server.
    */
   boost::system::error_code removeChannel(uint32_t uiChannelId);
+  /**
+   * @brief Setter for notifications when a client session is issues the PLAY command to the RTSP server.
+   */
+  void setOnClientSessionPlayCallback(OnClientSessionPlayHandler onClientSessionPlay){ m_onClientSessionPlay = onClientSessionPlay; }
+  /**
+   * @brief Callback to be called by RTSP server on client session PLAY.
+   */
+  void onRtspClientSessionPlay(unsigned uiClientSessionId);
 
 private:
   /**
@@ -131,6 +139,8 @@ private:
   IRateAdaptationFactory* m_pFactory;
   /// Rate control
   IRateController* m_pGlobalRateControl;
+  /// On client session play callback
+  OnClientSessionPlayHandler m_onClientSessionPlay;
 };
 
 } // lme
