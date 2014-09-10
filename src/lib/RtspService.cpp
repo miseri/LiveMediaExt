@@ -8,6 +8,12 @@
 #include "liveMedia.hh"
 #endif
 
+// if this is not defined, this blocks the start method
+// In the Windows DS filter, we need the method to block
+// However for the LiveMediaSourceStreamer app, it should not
+// block to fit the "Service" paradigm.
+#define RUN_LIV555_IN_NEW_THREAD
+
 namespace lme
 {
 
