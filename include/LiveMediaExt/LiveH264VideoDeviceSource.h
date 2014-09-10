@@ -40,7 +40,7 @@ protected:
 protected:
 
 private:
-  std::deque<MediaSample> splitPayloadIntoMediaSamples(BYTE* pBuffer, uint32_t uiSize, double dPts);
+  std::deque<MediaSample> splitPayloadIntoMediaSamples(unsigned char* pBuffer, uint32_t uiSize, double dPts);
   void printNalInfo( unsigned char* pNal, unsigned uiSize );
 
 private:
