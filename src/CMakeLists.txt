@@ -39,7 +39,7 @@ ELSE(MSVC12)
 message("WARNING: Unknown/unsupported MSVC version")
 ENDIF(MSVC12)
 ELSE(WIN32)
-ADD_DEFINITIONS(-std=c++11)
+ADD_DEFINITIONS(-std=c++0x)
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
 # 64bit
   SET(CMAKE_CXX_FLAGS "-fPIC")
@@ -84,10 +84,10 @@ ${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/UsageEnvironment/incl
 )
 ELSE(WIN32)
 SET(live555Includes
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/BasicUsageEnvironment/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/groupsock/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/liveMedia/include
-${LiveMediaExt_SOURCE_DIR}/../externals/live555-CMake/live/UsageEnvironment/include
+/usr/local/include/BasicUsageEnvironment
+/usr/local/include/groupsock
+/usr/local/include/liveMedia
+/usr/local/include/UsageEnvironment
 )
 ENDIF(WIN32)
 
@@ -154,6 +154,10 @@ ELSEIF(UNIX)
 # Do linux specific includes
 SET(LiveMediaExtLibs
 LiveMediaExt
+BasicUsageEnvironment
+groupsock
+liveMedia
+UsageEnvironment
 glog
 boost_date_time boost_filesystem boost_system boost_thread boost_program_options boost_regex
 pthread
