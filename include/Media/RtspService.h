@@ -1,3 +1,20 @@
+/**********
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the
+Free Software Foundation; either version 2.1 of the License, or (at your
+option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
+
+This library is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+**********/
+// "CSIR"
+// Copyright (c) 2014 CSIR.  All rights reserved.
 #pragma once
 #include <deque>
 #include <map>
@@ -72,14 +89,6 @@ public:
    * This results in a ServerMediaSession being removed from the RTSP server.
    */
   boost::system::error_code removeChannel(uint32_t uiChannelId);
-  /**
-   * @brief Setter for notifications when a client session is issues the PLAY command to the RTSP server.
-   */
-  void setOnClientSessionPlayCallback(OnClientSessionPlayHandler onClientSessionPlay){ m_onClientSessionPlay = onClientSessionPlay; }
-  /**
-   * @brief Callback to be called by RTSP server on client session PLAY.
-   */
-  void onRtspClientSessionPlay(unsigned uiClientSessionId);
 
 private:
   /**
@@ -139,8 +148,6 @@ private:
   IRateAdaptationFactory* m_pFactory;
   /// Rate control
   IRateController* m_pGlobalRateControl;
-  /// On client session play callback
-  OnClientSessionPlayHandler m_onClientSessionPlay;
 };
 
 } // lme

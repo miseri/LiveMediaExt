@@ -1,3 +1,20 @@
+/**********
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the
+Free Software Foundation; either version 2.1 of the License, or (at your
+option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
+
+This library is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+**********/
+// "CSIR"
+// Copyright (c) 2014 CSIR.  All rights reserved.
 #include "LiveMediaExtPch.h"
 #include <LiveMediaExt/LiveRtspServer.h>
 #include <iterator>
@@ -161,7 +178,7 @@ static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& r
                                         IRateAdaptationFactory* pFactory, IRateController* pGlobalRateControl)
 {
   VLOG(2) << "createNewSMS: " << channel.ChannelName;
-  ServerMediaSession* sms = ServerMediaSession::createNew(env, channel.ChannelName.c_str(), channel.ChannelName.c_str(), "Session streamed by \"MSS\"", False/*SSM*/);
+  ServerMediaSession* sms = ServerMediaSession::createNew(env, channel.ChannelName.c_str(), channel.ChannelName.c_str(), "Session streamed by \"MSS\"", True/*SSM*/);
 
   // at least a video or audio descriptor must be set
   assert(channel.VideoDescriptor || channel.AudioDescriptor);
@@ -291,11 +308,6 @@ void LiveRtspServer::setMaxConnectedClients( unsigned val )
 {
   m_uiMaxConnectedClients = val;
 #pragma chMSG(TODO: if val is less than previous value kick oldest clients to meet requirement)
-}
-
-void LiveRtspServer::onRtspClientSessionPlay(unsigned uiClientSessionId)
-{
-  if (m_onClientSessionPlay) m_onClientSessionPlay(uiClientSessionId);
 }
 
 } // lme

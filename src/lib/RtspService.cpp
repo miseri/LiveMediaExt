@@ -1,18 +1,24 @@
+/**********
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the
+Free Software Foundation; either version 2.1 of the License, or (at your
+option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
+
+This library is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+**********/
+// "CSIR"
+// Copyright (c) 2014 CSIR.  All rights reserved.
 #include "LiveMediaExtPch.h"
 #include <Media/RtspService.h>
 #include <LiveMediaExt/LiveSourceTaskScheduler.h>
 #include <LiveMediaExt/LiveRtspServer.h>
-
-// #define TEST_STREAMS
-#ifdef TEST_STREAMS
-#include "liveMedia.hh"
-#endif
-
-// if this is not defined, this blocks the start method
-// In the Windows DS filter, we need the method to block
-// However for the LiveMediaSourceStreamer app, it should not
-// block to fit the "Service" paradigm.
-#define RUN_LIV555_IN_NEW_THREAD
 
 namespace lme
 {
@@ -51,42 +57,7 @@ boost::system::error_code RtspService::init()
   // disable TCP streaming for testing
   m_pRtspServer->disableStreamingRTPOverTCP();
 #endif
-  // set notification for PLAY requests
-  m_pRtspServer->setOnClientSessionPlayCallback(boost::bind(&RtspService::onRtspClientSessionPlay, this, _1));
 
-  // taken from testOnDemandRTSPServer
-#ifdef TEST_STREAMS
-  char const* descriptionString
-    = "Session streamed by \"testOnDemandRTSPServer\"";
-
-  // An AAC audio stream (ADTS-format file):
-  {
-    char const* streamName = "aacAudioTest";
-    char const* inputFileName = "test.aac";
-    ServerMediaSession* sms
-      = ServerMediaSession::createNew(*m_pEnv, streamName, streamName,
-      descriptionString);
-    sms->addSubsession(ADTSAudioFileServerMediaSubsession
-      ::createNew(*m_pEnv, inputFileName, false));
-    m_pRtspServer->addServerMediaSession(sms);
-
-    //announceStream(rtspServer, sms, streamName, inputFileName);
-  }
-
-  // An AMR audio stream:
-  {
-    char const* streamName = "amrAudioTest";
-    char const* inputFileName = "test.amr";
-    ServerMediaSession* sms
-      = ServerMediaSession::createNew(*m_pEnv, streamName, streamName,
-      descriptionString);
-    sms->addSubsession(AMRAudioFileServerMediaSubsession
-      ::createNew(*m_pEnv, inputFileName, false));
-    m_pRtspServer->addServerMediaSession(sms);
-
-    // announceStream(m_pRtspServer, sms, streamName, inputFileName);
-  }
-#endif
   // Add task that checks if there's new data in the queue
   checkSessionsTask(this);
   checkChannelsTask(this);
@@ -279,11 +250,6 @@ boost::system::error_code RtspService::removeChannel(uint32_t uiChannelId)
     return boost::system::error_code(boost::system::errc::no_such_file_or_directory, boost::system::get_generic_category());
   }
   return boost::system::error_code();
-}
-
-void RtspService::onRtspClientSessionPlay(unsigned uiClientSessionId)
-{
-  if (m_onClientSessionPlay) m_onClientSessionPlay(uiClientSessionId);
 }
 
 } //lme

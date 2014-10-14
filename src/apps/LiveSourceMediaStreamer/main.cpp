@@ -1,3 +1,20 @@
+/**********
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the
+Free Software Foundation; either version 2.1 of the License, or (at your
+option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
+
+This library is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+**********/
+// "CSIR"
+// Copyright (c) 2014 CSIR.  All rights reserved.
 #include "stdafx.h"
 #include "VersionInfo.h"
 #include <boost/filesystem.hpp>
@@ -14,7 +31,10 @@ using namespace lme;
 
 /**
  * @brief Test program that simulates receiving data from a capture device 
- * and passing it to live555 for delivery.
+ * and passing it to live555 for delivery. 
+ *
+ * @TODO: use live555 classes to read files
+ * and use a custom sink to pass it to the LME for final delivery also using live555
  */
 int main(int argc, char** argv)
 {

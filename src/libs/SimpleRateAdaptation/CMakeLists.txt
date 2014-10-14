@@ -22,9 +22,7 @@ SimpleRateAdaptation
 ${LiveMediaExtLibs}
 )
 
-IF(WIN32)
 add_custom_command(TARGET SimpleRateAdaptation POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${LIBRARY_OUTPUT_PATH}/$<CONFIGURATION>/SimpleRateAdaptation.dll"
         "${EXECUTABLE_OUTPUT_PATH}/$<CONFIGURATION>/SimpleRateAdaptation.dll")
-ENDIF(WIN32)
