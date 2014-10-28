@@ -25,6 +25,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "liveMedia.hh"
 #endif
 
+// HACK
+// for usage in DirectShow this must NOT be defined
+// #define RUN_LIV555_IN_NEW_THREAD
+
 namespace lme
 {
 
