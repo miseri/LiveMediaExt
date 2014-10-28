@@ -178,7 +178,7 @@ static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& r
                                         IRateAdaptationFactory* pFactory, IRateController* pGlobalRateControl)
 {
   VLOG(2) << "createNewSMS: " << channel.ChannelName;
-  ServerMediaSession* sms = ServerMediaSession::createNew(env, channel.ChannelName.c_str(), channel.ChannelName.c_str(), "Session streamed by \"MSS\"", True/*SSM*/);
+  ServerMediaSession* sms = ServerMediaSession::createNew(env, channel.ChannelName.c_str(), channel.ChannelName.c_str(), "Session streamed by \"MSS\"", False/*SSM*/);
 
   // at least a video or audio descriptor must be set
   assert(channel.VideoDescriptor || channel.AudioDescriptor);
@@ -308,6 +308,11 @@ void LiveRtspServer::setMaxConnectedClients( unsigned val )
 {
   m_uiMaxConnectedClients = val;
 #pragma chMSG(TODO: if val is less than previous value kick oldest clients to meet requirement)
+}
+
+void LiveRtspServer::onRtspClientSessionPlay(unsigned uiClientSessionId)
+{
+  if (m_onClientSessionPlay) m_onClientSessionPlay(uiClientSessionId);
 }
 
 } // lme

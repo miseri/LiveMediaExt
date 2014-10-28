@@ -20,6 +20,11 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <LiveMediaExt/LiveSourceTaskScheduler.h>
 #include <LiveMediaExt/LiveRtspServer.h>
 
+// #define TEST_STREAMS
+#ifdef TEST_STREAMS
+#include "liveMedia.hh"
+#endif
+
 namespace lme
 {
 
@@ -56,6 +61,42 @@ boost::system::error_code RtspService::init()
 #if 0
   // disable TCP streaming for testing
   m_pRtspServer->disableStreamingRTPOverTCP();
+#endif
+  // set notification for PLAY requests
+  m_pRtspServer->setOnClientSessionPlayCallback(boost::bind(&RtspService::onRtspClientSessionPlay, this, _1));
+
+  // taken from testOnDemandRTSPServer
+#ifdef TEST_STREAMS
+  char const* descriptionString
+    = "Session streamed by \"testOnDemandRTSPServer\"";
+
+  // An AAC audio stream (ADTS-format file):
+  {
+    char const* streamName = "aacAudioTest";
+    char const* inputFileName = "test.aac";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*m_pEnv, streamName, streamName,
+      descriptionString);
+    sms->addSubsession(ADTSAudioFileServerMediaSubsession
+      ::createNew(*m_pEnv, inputFileName, false));
+    m_pRtspServer->addServerMediaSession(sms);
+
+    //announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // An AMR audio stream:
+  {
+    char const* streamName = "amrAudioTest";
+    char const* inputFileName = "test.amr";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*m_pEnv, streamName, streamName,
+      descriptionString);
+    sms->addSubsession(AMRAudioFileServerMediaSubsession
+      ::createNew(*m_pEnv, inputFileName, false));
+    m_pRtspServer->addServerMediaSession(sms);
+
+    // announceStream(m_pRtspServer, sms, streamName, inputFileName);
+  }
 #endif
 
   // Add task that checks if there's new data in the queue
@@ -250,6 +291,11 @@ boost::system::error_code RtspService::removeChannel(uint32_t uiChannelId)
     return boost::system::error_code(boost::system::errc::no_such_file_or_directory, boost::system::get_generic_category());
   }
   return boost::system::error_code();
+}
+
+void RtspService::onRtspClientSessionPlay(unsigned uiClientSessionId)
+{
+  if (m_onClientSessionPlay) m_onClientSessionPlay(uiClientSessionId);
 }
 
 } //lme
