@@ -36,6 +36,7 @@ endif()
 
 SET(LMX_SRCS 
 LiveMediaExtPch.cpp
+LiveAACSubsession.cpp
 LiveAMRAudioDeviceSource.cpp
 LiveAMRAudioRTPSink.cpp
 LiveAMRSubsession.cpp
@@ -49,6 +50,7 @@ LiveSourceTaskScheduler0.cpp
 )
 SET(LMX_HEADERS
 LiveMediaExtPch.h
+../../include/LiveMediaExt/LiveAACSubsession.h
 ../../include/LiveMediaExt/LiveAMRAudioDeviceSource.h
 ../../include/LiveMediaExt/LiveAMRAudioRTPSink.h
 ../../include/LiveMediaExt/LiveAMRSubsession.h

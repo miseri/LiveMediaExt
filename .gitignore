@@ -41,3 +41,5 @@ Icon
 externals/
 Projects-vs2013/
 bin/
+lib/Debug/libglog.exp
+*.exp

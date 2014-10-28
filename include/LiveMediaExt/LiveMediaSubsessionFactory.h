@@ -20,6 +20,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
 #include <cpputil/Conversion.h>
+#include <LiveMediaExt/LiveAACSubsession.h>
 #include <LiveMediaExt/LiveAMRSubsession.h>
 #include <LiveMediaExt/LiveH264Subsession.h>
 #include <LiveMediaExt/LiveMediaSubsession.h>
@@ -106,6 +107,20 @@ public:
         uiChannelId, uiSubsessionId,
         sSessionName,
         audioDescriptor.Channels, audioDescriptor.BitsPerSample, audioDescriptor.SamplingFrequency, 
+        pFactory, pRateControl);
+    }
+    else if (audioDescriptor.Codec == AAC)
+    {
+      // TODO: return null pointer if audio parameters are not set?
+      VLOG(2) << "Adding AAC subsession: channels: " << audioDescriptor.Channels
+        << " bits per sample: " << audioDescriptor.BitsPerSample
+        << " sampling frequency: " << audioDescriptor.SamplingFrequency
+        << " AAC config string: " << audioDescriptor.ConfigString;
+      pMediaSubsession = new LiveAACSubsession(env, rRtspServer,
+        uiChannelId, uiSubsessionId,
+        sSessionName,
+        audioDescriptor.Channels, audioDescriptor.BitsPerSample, audioDescriptor.SamplingFrequency,
+        audioDescriptor.ConfigString,
         pFactory, pRateControl);
     }
     else
