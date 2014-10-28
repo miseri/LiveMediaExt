@@ -49,8 +49,8 @@ LiveAACSubsession::~LiveAACSubsession()
 
 FramedSource* LiveAACSubsession::createSubsessionSpecificSource(unsigned clientSessionId,
                                                                 IMediaSampleBuffer* pMediaSampleBuffer, 
-                                                                IRateAdaptationFactory* pRateAdaptationFactory,
-                                                                IRateController* pRateControl)
+                                                                IRateAdaptationFactory* /*pRateAdaptationFactory*/,
+                                                                IRateController* /*pRateControl*/)
 {
   // not performing rate adaptation in this module
   return LiveDeviceSource::createNew(envir(), clientSessionId, this, pMediaSampleBuffer, NULL, NULL);
