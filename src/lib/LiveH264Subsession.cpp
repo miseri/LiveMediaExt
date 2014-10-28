@@ -62,7 +62,7 @@ FramedSource* LiveH264Subsession::createSubsessionSpecificSource(unsigned client
 void LiveH264Subsession::setEstimatedBitRate(unsigned& estBitrate)
 {
 	// Set estimated session band width
-	estBitrate = 1000;
+	estBitrate = 500;
 }
 
 RTPSink* LiveH264Subsession::createSubsessionSpecificRTPSink( Groupsock* rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource* inputSource )
