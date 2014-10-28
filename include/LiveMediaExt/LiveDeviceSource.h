@@ -95,9 +95,6 @@ public:
 
   bool isPlaying() const { return m_bIsPlaying; }
 
- // // HACK: method that should show if the device source was updated. Used for notification
- // bool sourceUpdateOccurred() const { return m_bSourceUpdateOccurred; }
-
 protected:
   LiveDeviceSource(UsageEnvironment& env, unsigned uiClientId, LiveMediaSubsession* pParent, 
                    IFrameGrabber* pFrameGrabber, IRateAdaptationFactory* pRateAdaptationFactory, IRateController* pRateControl);
