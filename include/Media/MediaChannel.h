@@ -69,11 +69,11 @@ private:
   /**
    * @brief The subclass must implement delivery of video media samples to the media sink
    */
-  virtual boost::system::error_code deliverVideo(uint32_t m_uiChannelId, const std::vector<MediaSample>& mediaSamples) = 0;
+  virtual boost::system::error_code deliverVideo(uint32_t uiChannelId, const std::vector<MediaSample>& mediaSamples) = 0;
   /**
    * @brief The subclass must implement delivery of audio media samples to the media sink
    */
-  virtual boost::system::error_code deliverAudio(uint32_t m_uiChannelId, const std::vector<MediaSample>& mediaSamples) = 0;
+  virtual boost::system::error_code deliverAudio(uint32_t uiChannelId, const std::vector<MediaSample>& mediaSamples) = 0;
 
 private:
   /// unique channel id
