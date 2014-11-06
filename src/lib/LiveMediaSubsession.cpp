@@ -61,10 +61,10 @@ LiveMediaSubsession::LiveMediaSubsession( UsageEnvironment& env, LiveRtspServer&
 #endif
 
 	TaskScheduler* pScheduler = &(envir().taskScheduler());
-  LiveSourceTaskScheduler* pLiveScheduler = dynamic_cast<LiveSourceTaskScheduler*>(pScheduler);
-  if (pLiveScheduler)
+  LiveSourceTaskScheduler* pPollingScheduler = dynamic_cast<LiveSourceTaskScheduler*>(pScheduler);
+  if (pPollingScheduler)
   {
-    pLiveScheduler->removeMediaSubsession(m_uiChannelId, m_uiSourceID, this);
+    pPollingScheduler->addMediaSubsession(m_uiChannelId, m_uiSourceID, this);
   }
 
   // create sample buffer according to number of 'switchable' channels
