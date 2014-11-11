@@ -32,6 +32,8 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 namespace lme
 {
 
+const uint16_t RtspService::DEFAULT_RTSP_PORT = 554;
+
 RtspService::RtspService(ChannelManager& channelManager, IRateAdaptationFactory* pFactory, IRateController* pGlobalRateControl)
   :m_channelManager(channelManager),
   m_cEventloop(0),
@@ -45,7 +47,7 @@ RtspService::RtspService(ChannelManager& channelManager, IRateAdaptationFactory*
 
 }
 
-boost::system::error_code RtspService::init()
+boost::system::error_code RtspService::init(uint16_t uiRtspPort)
 {
   VLOG(2) << "Initialising RTSP service";
   // init live555 environment
@@ -54,7 +56,7 @@ boost::system::error_code RtspService::init()
   // live media env
   m_pEnv = BasicUsageEnvironment::createNew(*m_pScheduler);
   VLOG(2) << "Creating RTSP server";
-  m_pRtspServer = LiveRtspServer::createNew(*m_pEnv, 554, 0, m_pFactory, m_pGlobalRateControl);
+  m_pRtspServer = LiveRtspServer::createNew(*m_pEnv, uiRtspPort, 0, m_pFactory, m_pGlobalRateControl);
   if (m_pRtspServer == NULL)
   {
     *m_pEnv << "Failed to create RTSP server: " << m_pEnv->getResultMsg() << "\n";
@@ -145,6 +147,7 @@ boost::system::error_code RtspService::stop()
 void RtspService::live555EventLoop()
 {
   m_bEventLoopRunning = true;
+  m_cEventloop = 0;
 
   VLOG(2) << "Entering LiveMedia event loop";
   m_pEnv->taskScheduler().doEventLoop(&m_cEventloop); // does not return
@@ -153,6 +156,9 @@ void RtspService::live555EventLoop()
   VLOG(2) << "LiveMedia event loop complete";
 
   cleanupLiveMediaEnvironment();
+
+  // clean up map: for next session init must be called again, as well as createChannel, etc
+  m_mChannels.clear();
 }
 
 void RtspService::cleanupLiveMediaEnvironment()

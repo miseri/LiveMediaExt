@@ -48,6 +48,7 @@ class IRateController;
  */
 class RtspService : private boost::noncopyable
 {
+  static const uint16_t DEFAULT_RTSP_PORT;
 public:
   /**
    * @brief Constructor
@@ -56,9 +57,9 @@ public:
   /**
    * @brief Initialises live555 components
    */
-  boost::system::error_code init();
+  boost::system::error_code init(uint16_t uiRtspPort = DEFAULT_RTSP_PORT);
   /**
-   * @brief starts RTSP service: blocking method!
+   * @brief starts RTSP service: blocking method! init() must be called prior to this!
    */
   boost::system::error_code start();
   /**
