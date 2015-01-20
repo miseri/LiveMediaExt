@@ -25,9 +25,11 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 namespace lme
 {
 
-/// This class abstracts the multiple buffers that a (multiplexed) sample gets copied into
-/// The interface tries to cater for both media samples where there is only one channel such as PCM or H263
-/// As well as our custom multiplexed H263 data type
+/** 
+ * @brief This class abstracts the multiple buffers that a (multiplexed) sample gets copied into
+ * The interface tries to cater for both media samples where there is only one channel such 
+ * as PCM or H263 as well as our custom multiplexed media data types
+ */
 class IMediaSampleBuffer
 {
 public:
@@ -49,6 +51,3 @@ public:
 };
 
 } // lme
-
-
-
