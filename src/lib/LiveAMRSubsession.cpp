@@ -29,7 +29,7 @@ LiveAMRSubsession::LiveAMRSubsession( UsageEnvironment& env, LiveRtspServer& rPa
                                       const std::string& sSessionName,
                                       const unsigned uiNumChannels, const unsigned uiBitsPerSample, const unsigned uiSamplingFrequency,
                                       IRateAdaptationFactory* pFactory, IRateController* pGlobalRateControl)
-  :LiveMediaSubsession(env, rParent, uiChannelId, uniqueSessionID, sSessionName, false, 1, pFactory, pGlobalRateControl),
+  :LiveMediaSubsession(env, rParent, uiChannelId, uniqueSessionID, sSessionName, false, 1, false, pFactory, pGlobalRateControl),
   m_numChannels(uiNumChannels),
   m_bitsPerSample(uiBitsPerSample),
   m_samplingFrequency(uiSamplingFrequency),
