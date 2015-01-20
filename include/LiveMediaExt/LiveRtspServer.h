@@ -86,6 +86,9 @@ struct Channel
 /**
  * Our RTSP server class is derived from the liveMedia RTSP server. It extends the live555 RTSP server
  * to stream live media sessions.
+ *
+ * It also adds the capability to set the maximum number of connected clients.
+ * It adds the ability to kick clients off the server.
  */
 class LiveRtspServer: public RTSPServer
 {
@@ -120,8 +123,25 @@ public:
    * @brief Setter for notifications when a client session is issues the PLAY command to the RTSP server.
    */
   void setOnClientSessionPlayCallback(OnClientSessionPlayHandler onClientSessionPlay){ m_onClientSessionPlay = onClientSessionPlay; }
+  /**
+   * @brief handler to be called when clients join
+   */
+  void onClientJoin(uint32_t uiChannelId, uint32_t uiSourceId, uint32_t uiClientId, std::string& sIpAddress);
+  /**
+   * @brief handler to be called when clients update
+   */
+  void onClientUpdate(uint32_t uiChannelId, uint32_t uiSourceId, uint32_t uiClientId, uint32_t uiChannelIndex);
+  /**
+   * @brief handler to be called when clients leave
+   */
+  void onClientLeave(uint32_t uiChannelId, uint32_t uiSourceId, uint32_t uiClientId);
 
 protected:
+  /**
+   * @brief ends the server session
+   *
+   * To do this it must first kick all clients connected to the session.
+   */
   void endServerSession(const std::string& sSessionName);
   /**
    * @brief This is called when the client session processes the 
@@ -224,6 +244,7 @@ protected:
         if (m_pParent->getNumberOfConnectedClients() <= m_pParent->getMaxConnectedClients())
         {
           RTSPClientSession::handleCmd_SETUP(ourClientConnection, urlPreSuffix, urlSuffix, fullRequestStr);
+          VLOG(2) << "TODO: parse request str to get user: " << fullRequestStr;
           return;
         }
         else
@@ -234,6 +255,7 @@ protected:
           // Convert IpAddress to readable format
           struct in_addr destinationAddr; destinationAddr.s_addr = pRtvcConnection->getClientAddr().sin_addr.s_addr;
           std::string sIpAddress(inet_ntoa(destinationAddr));
+          VLOG(5) << "Max connections (" << m_pParent->getMaxConnectedClients() << ") reached.Rejecting connection request from " << sIpAddress;
  	        pRtvcConnection->handleCmd_notEnoughBandwidth();
           return;
         }
@@ -242,6 +264,7 @@ protected:
       {
         // SETUP in existing session: let base class handle it
         RTSPClientSession::handleCmd_SETUP(ourClientConnection, urlPreSuffix, urlSuffix, fullRequestStr);
+        VLOG(2) << "TODO: parse request str to get user: " << fullRequestStr;
         return;
       }
     }
@@ -261,7 +284,7 @@ protected:
     unsigned m_uiSessionId;
   };
 
-    // If you subclass "RTSPClientConnection", then you must also redefine this virtual function in order
+  // If you subclass "RTSPClientConnection", then you must also redefine this virtual function in order
   // to create new objects of your subclass:
   virtual RTSPClientConnection*
   createNewClientConnection(int clientSocket, struct sockaddr_in clientAddr)
@@ -307,6 +330,11 @@ private:
 private: 
 	/// redefined virtual functions: this method returns the session identified by streamName provided its valid
 	virtual ServerMediaSession* lookupServerMediaSession(char const* streamName);
+  /**
+   * @brief Kicks clients from the server
+   * this method SHOULD only be called from within the live555 eventloop!
+   */
+  void kickClient(unsigned uiClientId);
 
   typedef std::map<unsigned, LiveRTSPClientSession*> LiveClientSessionMap_t;
   /// map to store a pointer to client sessions on creation

@@ -22,6 +22,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <sstream>
 #include <string>
 #include <boost/foreach.hpp>
+#include <boost/bind.hpp>
 #include <liveMedia.hh>
 #include <RTSPCommon.hh> // for snprintf
 #include <LiveMediaExt/LiveMediaSubsession.h>
@@ -197,15 +198,16 @@ static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& r
     if (pLiveMediaSubsession == NULL)
     {
       LOG(WARNING) << "TODO: Invalid video subsession";
-      // RG: live555 update makes destructor protected!
-      // TODO: revise
-      // delete sms;
+      Medium::close(sms);
       return NULL;
     }
     else
     {
       VLOG(2) << "Added " << channel.ChannelName << " to video ServerMediaSession";
       sms->addSubsession(pLiveMediaSubsession);
+      pLiveMediaSubsession->setClientJoinHandler(boost::bind(&LiveRtspServer::onClientJoin, boost::ref(rRtspServer), _1, _2, _3, _4));
+      pLiveMediaSubsession->setClientUpdateHandler(boost::bind(&LiveRtspServer::onClientUpdate, boost::ref(rRtspServer), _1, _2, _3, _4));
+      pLiveMediaSubsession->setClientLeaveHandler(boost::bind(&LiveRtspServer::onClientLeave, boost::ref(rRtspServer), _1, _2, _3));
     }
   }
 
@@ -217,15 +219,16 @@ static ServerMediaSession* createNewSMS(UsageEnvironment& env, LiveRtspServer& r
     if (pLiveMediaSubsession == NULL)
     {
       LOG(WARNING) << "TODO: Invalid audio subsession";
-      // RG: live555 update makes destructor protected!
-      // TODO: revise
-      // delete sms;
+      Medium::close(sms);
       return NULL;
     }
     else
     {
       VLOG(2) << "Added " << channel.ChannelName << " audio to ServerMediaSession";
       sms->addSubsession(pLiveMediaSubsession);
+      pLiveMediaSubsession->setClientJoinHandler(boost::bind(&LiveRtspServer::onClientJoin, boost::ref(rRtspServer), _1, _2, _3, _4));
+      pLiveMediaSubsession->setClientUpdateHandler(boost::bind(&LiveRtspServer::onClientUpdate, boost::ref(rRtspServer), _1, _2, _3, _4));
+      pLiveMediaSubsession->setClientLeaveHandler(boost::bind(&LiveRtspServer::onClientLeave, boost::ref(rRtspServer), _1, _2, _3));
     }
   }
 
@@ -254,6 +257,23 @@ void LiveRtspServer::doCheckClientSessions()
   checkClientSessions();
 }
 
+void LiveRtspServer::kickClient(unsigned uiClientId)
+{
+  // find corresponding client session
+  LiveClientSessionMap_t::iterator it = m_mRtspClientSessions.find(uiClientId);
+  if (it != m_mRtspClientSessions.end())
+  {
+    VLOG(15) << "Kicking client - " << uiClientId;
+    // acording to live555 mailing list, deletion of a client session cleanly removes the session
+    delete it->second;
+  }
+  else
+  {
+    // couldn't find client in map
+    VLOG(15) << "Unable to kick client - not found " << uiClientId;
+  }
+}
+
 void LiveRtspServer::endServerSession(const std::string& sSession)
 {
   // Next, check whether we already have an RTSP "ServerMediaSession" for this media stream:
@@ -262,36 +282,35 @@ void LiveRtspServer::endServerSession(const std::string& sSession)
   if (sms)
   {
     VLOG(2) << "TODO: Kick all clients from RTSP media session: " << sSession;
-    //// First kick all clients so that we can remove the subsession and dereg from the scheduler
-    //// The LiveMediaSubsession objects can only be reclaimed once there are no outstanding references
-    //ServerMediaSubsessionIterator iter(*sms);
-    //ServerMediaSubsession* pSub = iter.next();
+    // First kick all clients so that we can remove the subsession and dereg from the scheduler
+    // The LiveMediaSubsession objects can only be reclaimed once there are no outstanding references
+    ServerMediaSubsessionIterator iter(*sms);
+    ServerMediaSubsession* pSub = iter.next();
 
-    //// stores set of unique ids
-    //std::set<unsigned> uniqueClientIds;
+    // stores set of unique ids
+    std::set<unsigned> uniqueClientIds;
 
-    //while (pSub != NULL) 
-    //{
-    //  // Kick all clients
-    //  LiveMediaSubsession* pSubsession = static_cast<LiveMediaSubsession*>(pSub);
-    //  // assuming our server only contains LiveMediaSubsession
-    //  // in the case that it does not, we could use dynamic_cast but this shouldn't be the case
-    //  std::vector<unsigned> vClientIds = pSubsession->getConnectedClientIds();
-    //  // the live555 assigns the same client id to the audio and video subsession
-    //  // this next part could be superfluous since the first subsession SHOULD contain all IDs
-    //  // but playing it on the safe side for now
-    //  std::copy(vClientIds.begin(), vClientIds.end(), inserter(uniqueClientIds, uniqueClientIds.end()));
+    while (pSub != NULL) 
+    {
+      // Kick all clients
+      LiveMediaSubsession* pSubsession = static_cast<LiveMediaSubsession*>(pSub);
+      // assuming our server only contains LiveMediaSubsession
+      // in the case that it does not, we could use dynamic_cast but this shouldn't be the case
+      std::vector<unsigned> vClientIds = pSubsession->getConnectedClientIds();
+      // the live555 assigns the same client id to the audio and video subsession
+      // this next part could be superfluous since the first subsession SHOULD contain all IDs
+      // but playing it on the safe side for now
+      std::copy(vClientIds.begin(), vClientIds.end(), inserter(uniqueClientIds, uniqueClientIds.end()));
+      pSub = iter.next();
+    }
 
-    //  pSub = iter.next();
-    //}
+    // now kick all clients
+    BOOST_FOREACH(unsigned uiId, uniqueClientIds)
+    {
+      kickClient(uiId);
+    }
 
-    //// now kick all clients
-    //BOOST_FOREACH(unsigned uiId, uniqueClientIds)
-    //{
-    //  kickClient(uiId);
-    //}
-
-    //VLOG(2) << "Kicking complete: " << sSession;
+    VLOG(2) << "Kicking complete: " << sSession;
   }
   else
   {
@@ -313,6 +332,21 @@ void LiveRtspServer::setMaxConnectedClients( unsigned val )
 void LiveRtspServer::onRtspClientSessionPlay(unsigned uiClientSessionId)
 {
   if (m_onClientSessionPlay) m_onClientSessionPlay(uiClientSessionId);
+}
+
+void LiveRtspServer::onClientJoin(uint32_t uiChannelId, uint32_t uiSourceId, uint32_t uiClientId, std::string& sIpAddress)
+{
+  VLOG(5) << "Client joined: Channel: " << uiChannelId << ":" << uiSourceId << " client ID: " << uiChannelId << " IP: " << sIpAddress;
+}
+
+void LiveRtspServer::onClientUpdate(uint32_t uiChannelId, uint32_t uiSourceId, uint32_t uiClientId, uint32_t uiChannelIndex)
+{
+  VLOG(5) << "Client joined: Channel: " << uiChannelId << ":" << uiSourceId << " client ID: " << uiChannelId << " Channel index: " << uiChannelIndex;
+}
+
+void LiveRtspServer::onClientLeave(uint32_t uiChannelId, uint32_t uiSourceId, uint32_t uiClientId)
+{
+  VLOG(5) << "Client left: Channel: " << uiChannelId << ":" << uiSourceId << " client ID: " << uiChannelId;
 }
 
 } // lme
