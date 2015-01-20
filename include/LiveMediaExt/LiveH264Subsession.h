@@ -38,7 +38,7 @@ public:
 
 protected:
 
-  /// Overridden from RtvcLiveMediaSubsession
+  /// Overridden from LiveMediaSubsession
   virtual FramedSource* createSubsessionSpecificSource(unsigned clientSessionId, 
                                                        IMediaSampleBuffer* pMediaSampleBuffer, 
                                                        IRateAdaptationFactory* pRateAdaptationFactory,
