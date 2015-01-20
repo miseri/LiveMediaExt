@@ -17,7 +17,9 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Copyright (c) 2014 CSIR.  All rights reserved.
 #pragma once
 #include <map>
+#include <string>
 #include <vector>
+#include <boost/function.hpp>
 #ifndef _ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
 #include "OnDemandServerMediaSubsession.hh"
 #endif
@@ -35,6 +37,18 @@ class IRateController;
 
 // Typedefs
 typedef std::vector<LiveDeviceSource*> LiveDeviceSourcePtrList_t;
+/**
+ * @brief Channel id, source id, client id, IP address
+ */
+typedef boost::function<void(uint32_t, uint32_t, uint32_t, std::string&)> ClientJoinHandler_t;
+/**
+ * @brief Channel id, source id, client id, channel index
+ */
+typedef boost::function<void(uint32_t, uint32_t, uint32_t, uint32_t)> ClientUpdateHandler_t;
+/**
+ * @brief Channel id, source id, client id
+ */
+typedef boost::function<void(uint32_t, uint32_t, uint32_t)> ClientLeaveHandler_t;
 
 /**
  * @brief Base class for live media subsessions.
@@ -49,6 +63,7 @@ typedef std::vector<LiveDeviceSource*> LiveDeviceSourcePtrList_t;
  */
 class LiveMediaSubsession : public OnDemandServerMediaSubsession
 {
+  friend class LiveDeviceSource;
 public:
   /**
    * @brief Destructor
@@ -75,14 +90,6 @@ public:
    */
   bool isSwitchable() const { return m_uiTotalChannels > 1; }
 	/**
-   * @brief register live device source with subsession
-   */
-	void addDeviceSource(LiveDeviceSource* pDeviceSource);
-	/**
-   * @brief deregister live device source from subsession
-   */
-	void removeDeviceSource(LiveDeviceSource* pDeviceSource);
-	/**
    * @brief Add a media sample to the subsession
    */
   virtual void addMediaSample(const MediaSample& mediaSample);
@@ -90,6 +97,33 @@ public:
    * @brief This method processes the received receiver reports
    */
   void processClientStatistics();
+  /**
+   * @brief Getter for connected client ids
+   */
+  std::vector<unsigned> getConnectedClientIds() const;
+  /**
+   * @brief Setter for client join callbacks
+   */
+  void setClientJoinHandler(ClientJoinHandler_t onJoin) { m_onJoin = onJoin; }
+  /**
+   * @brief Setter for client update callbacks
+   */
+  void setClientUpdateHandler(ClientUpdateHandler_t onUpdate) { m_onUpdate = onUpdate; }
+  /**
+   * @brief Setter for client leave callbacks
+   */
+  void setClientLeaveHandler(ClientLeaveHandler_t onLeave) { m_onLeave = onLeave; }
+
+protected:
+  /**
+   * @brief register live device source with subsession
+   */
+  void addDeviceSource(LiveDeviceSource* pDeviceSource);
+  /**
+   * @brief deregister live device source from subsession
+   */
+  void removeDeviceSource(LiveDeviceSource* pDeviceSource);
+
 protected:
   /**
    * @brief Constructor
@@ -101,6 +135,7 @@ protected:
                           const unsigned uiChannelId, unsigned uiSourceID, 
                           const std::string& sSessionName, 
                           bool bVideo, const unsigned uiTotalChannels = 1,
+                          bool bIsSwitchableFormat = false,
                           IRateAdaptationFactory* pFactory = NULL,
                           IRateController* pGlobalRateControl = NULL);
 
@@ -182,6 +217,12 @@ protected:
   IRateAdaptationFactory* m_pFactory;
   /// Global rate control: depending on the type of rate control i.e. per source or per client.
   IRateController* m_pGlobalRateControl;
+  /// Callback for client joins
+  ClientJoinHandler_t m_onJoin;
+  /// Callback for client updates
+  ClientUpdateHandler_t m_onUpdate;
+  /// Callback for client leaves
+  ClientLeaveHandler_t m_onLeave;
 };
 
 typedef std::vector<LiveMediaSubsession*> LiveMediaSubsessionPtrList_t; 

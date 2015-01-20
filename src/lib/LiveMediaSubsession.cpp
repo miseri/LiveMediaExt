@@ -29,7 +29,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <LiveMediaExt/LiveRtspServer.h>
 #include <Media/MediaSampleStorageBuffer.h>
 #include <Media/MediaTypes.h>
-// #include <Media/ParallelMediaSampleBuffer.h>
+#include <Media/MultiMediaSampleBuffer.h>
 #include <Media/SingleMediaSampleBuffer.h>
 
 // We don't want to reuse the first source as one usually would for "live" liveMedia sources
@@ -43,6 +43,7 @@ LiveMediaSubsession::LiveMediaSubsession( UsageEnvironment& env, LiveRtspServer&
                                                   const unsigned uiChannelId, unsigned uiSourceId, 
                                                   const std::string& sSessionName, 
                                                   bool bVideo, const unsigned uiTotalChannels,
+                                                  bool bIsSwitchableFormat,
                                                   IRateAdaptationFactory* pFactory,
                                                   IRateController* pGlobalRateControl)
 	:OnDemandServerMediaSubsession(env, REUSE_FIRST_SOURCE),
@@ -69,10 +70,8 @@ LiveMediaSubsession::LiveMediaSubsession( UsageEnvironment& env, LiveRtspServer&
 
   // create sample buffer according to number of 'switchable' channels
   assert(m_uiTotalChannels > 0);
-  if (m_uiTotalChannels > 1)
-    // TODO
-    ;
-    // m_pSampleBuffer = new ParallelMediaSampleBuffer(m_uiTotalChannels);
+  if (m_uiTotalChannels > 1 || bIsSwitchableFormat)
+    m_pSampleBuffer = new MultiMediaSampleBuffer(m_uiTotalChannels);
   else
     m_pSampleBuffer = new SingleMediaSampleBuffer();
 
@@ -184,7 +183,9 @@ void LiveMediaSubsession::deleteStream( unsigned clientSessionId, void*& streamT
 	// Call super class method
 	OnDemandServerMediaSubsession::deleteStream(clientSessionId, streamToken);
 
-  // TODO: could handle client management here
+  // handle client management
+  if (m_onLeave)
+    m_onLeave(m_uiChannelId, m_uiSourceID, clientSessionId);
 }
 
 void LiveMediaSubsession::getStreamParameters( unsigned clientSessionId, netAddressBits clientAddress, Port const& clientRTPPort, Port const& clientRTCPPort, int tcpSocketNum, unsigned char rtpChannelId, unsigned char rtcpChannelId, netAddressBits& destinationAddress, u_int8_t& destinationTTL, Boolean& isMulticast, Port& serverRTPPort, Port& serverRTCPPort, void*& streamToken )
@@ -192,9 +193,26 @@ void LiveMediaSubsession::getStreamParameters( unsigned clientSessionId, netAddr
 	if (destinationAddress == 0) destinationAddress = clientAddress;
 	struct in_addr destinationAddr; destinationAddr.s_addr = destinationAddress;
 
-  // TODO: could handle client management here
+  // client management
+  if (m_onJoin)
+  {
+    // Convert IpAddress to readable format
+    std::string sIpAddress(inet_ntoa(destinationAddr));
+    m_onJoin(m_uiChannelId, m_uiSourceID, clientSessionId, sIpAddress);
+  }
+
 	OnDemandServerMediaSubsession::getStreamParameters( clientSessionId, clientAddress, clientRTPPort, clientRTCPPort, tcpSocketNum, rtpChannelId, 
 		rtcpChannelId, destinationAddress, destinationTTL, isMulticast, serverRTPPort, serverRTCPPort, streamToken);
+}
+
+std::vector<unsigned> LiveMediaSubsession::getConnectedClientIds() const
+{
+  std::vector<unsigned> vClientIds;
+  for (auto pDeviceSource : m_vDeviceSources)
+  {
+    vClientIds.push_back(pDeviceSource->getClientId());
+  }
+  return vClientIds;
 }
 
 } // lme

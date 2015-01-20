@@ -29,7 +29,7 @@ LiveAACSubsession::LiveAACSubsession( UsageEnvironment& env, LiveRtspServer& rPa
                                       const unsigned uiNumChannels, const unsigned uiBitsPerSample, const unsigned uiSamplingFrequency,
                                       const std::string& sConfigStr,
                                       IRateAdaptationFactory* pFactory, IRateController* pGlobalRateControl)
-  :LiveMediaSubsession(env, rParent, uiChannelId, uiSourceID, sSessionName, false, 1, pFactory, pGlobalRateControl),
+  :LiveMediaSubsession(env, rParent, uiChannelId, uiSourceID, sSessionName, false, 1, false, pFactory, pGlobalRateControl),
   m_numChannels(uiNumChannels),
   m_bitsPerSample(uiBitsPerSample),
   m_samplingFrequency(uiSamplingFrequency),
