@@ -32,7 +32,7 @@ public:
 
   static LiveH264VideoDeviceSource* createNew(UsageEnvironment& env, unsigned uiClientId,
                                               LiveMediaSubsession* pParent, const std::string& sSps, const std::string& sPps, 
-                                              IMediaSampleBuffer* pSampleBuffer, 
+                                              IFrameGrabber* pFrameGrabber,
                                               IRateAdaptationFactory* pRateAdaptationFactory,
                                               IRateController* pRateControl);
 
@@ -43,7 +43,7 @@ protected:
   LiveH264VideoDeviceSource(UsageEnvironment& env, unsigned uiClientId, 
                             LiveMediaSubsession* pParent,
                             const std::string& sSps, const std::string& sPps, 
-                            IMediaSampleBuffer* pSampleBuffer, IRateAdaptationFactory* pRateAdaptationFactory,
+                            IFrameGrabber* pFrameGrabber, IRateAdaptationFactory* pRateAdaptationFactory,
                             IRateController* pGlobalRateControl);
 
 protected:

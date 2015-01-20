@@ -17,7 +17,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Copyright (c) 2014 CSIR.  All rights reserved.
 #include "LiveMediaExtPch.h"
 #include <LiveMediaExt/LiveH264VideoDeviceSource.h>
-#include <Media/SimpleFrameGrabber.h>
+#include <Media/FrameGrabber.h>
 
 namespace lme
 {
@@ -25,10 +25,10 @@ namespace lme
 LiveH264VideoDeviceSource::LiveH264VideoDeviceSource( UsageEnvironment& env, unsigned uiClientId,  
                                                       LiveMediaSubsession* pParent, 
                                                       const std::string& sSps, const std::string& sPps,
-                                                      IMediaSampleBuffer* pSampleBuffer, 
+                                                      IFrameGrabber* pFrameGrabber,
                                                       IRateAdaptationFactory* pRateAdaptationFactory,
                                                       IRateController* pGlobalRateControl)
-  :LiveDeviceSource(env, uiClientId, pParent, new SimpleFrameGrabber(pSampleBuffer), pRateAdaptationFactory, pGlobalRateControl),
+  :LiveDeviceSource(env, uiClientId, pParent, pFrameGrabber, pRateAdaptationFactory, pGlobalRateControl),
   m_bWaitingForIdr(true)
 {
 
@@ -42,14 +42,15 @@ LiveH264VideoDeviceSource::~LiveH264VideoDeviceSource()
 LiveH264VideoDeviceSource* LiveH264VideoDeviceSource::createNew(UsageEnvironment& env, unsigned uiClientId,
                                                                  LiveMediaSubsession* pParent, 
                                                                  const std::string& sSps, const std::string& sPps,
-                                                                 IMediaSampleBuffer* pSampleBuffer, 
+                                                                 IFrameGrabber* pFrameGrabber,
                                                                  IRateAdaptationFactory* pRateAdaptationFactory,
                                                                  IRateController* pGlobalRateControl)
 {
   // When constructing a 'simple' LiveDeviceSource we'll just create a simple frame grabber
   LiveH264VideoDeviceSource* pSource = new LiveH264VideoDeviceSource(env, uiClientId, pParent, 
                                                                      sSps, sPps, 
-                                                                     pSampleBuffer, pRateAdaptationFactory, pGlobalRateControl);
+                                                                     pFrameGrabber, 
+                                                                     pRateAdaptationFactory, pGlobalRateControl);
   return pSource;
 }
 
