@@ -22,6 +22,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <H264VideoRTPSink.hh>
 #include "Base64.hh"
 #include "H264VideoStreamDiscreteFramer.hh"
+#include <Media/SimpleFrameGrabber.h>
 
 namespace lme
 {
@@ -32,7 +33,7 @@ LiveH264Subsession::LiveH264Subsession( UsageEnvironment& env, LiveRtspServer& r
                                         const std::string& sSps, const std::string& sPps, 
                                         IRateAdaptationFactory* pFactory,
                                         IRateController* pGlobalRateControl)
-  :LiveMediaSubsession(env, rParent, uiChannelId, uiSourceId, sSessionName, true, 1, pFactory, pGlobalRateControl),
+  :LiveMediaSubsession(env, rParent, uiChannelId, uiSourceId, sSessionName, true, 1, false, pFactory, pGlobalRateControl),
   m_sSps(sSps),
   m_sPps(sPps),
   fAuxSDPLine(NULL),
@@ -53,7 +54,8 @@ FramedSource* LiveH264Subsession::createSubsessionSpecificSource(unsigned client
                                                                  IRateController* pRateControl)
 {
   FramedSource* pLiveDeviceSource = LiveH264VideoDeviceSource::createNew(envir(), clientSessionId, this, m_sSps, m_sPps, 
-                                                                         pMediaSampleBuffer, pRateAdaptationFactory, pRateControl);
+                                                                         new SimpleFrameGrabber(pMediaSampleBuffer), 
+                                                                         pRateAdaptationFactory, pRateControl);
   // wrap framer around our device source
   H264VideoStreamDiscreteFramer* pFramer = H264VideoStreamDiscreteFramer::createNew(envir(), pLiveDeviceSource);
   return pFramer;
