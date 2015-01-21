@@ -34,6 +34,14 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   # using Visual Studio C++
 endif()
 
+SET(MED_SRCS
+MediaTypes.cpp
+PacketManagerMediaChannel.cpp
+RtpTransmissionStats.cpp
+RtspService.cpp
+VirtualMediaSource.cpp
+)
+
 SET(LMX_SRCS 
 LiveMediaExtPch.cpp
 LiveAACSubsession.cpp
@@ -42,12 +50,14 @@ LiveAMRAudioRTPSink.cpp
 LiveAMRSubsession.cpp
 LiveDeviceSource.cpp
 LiveH264Subsession.cpp
+#LiveH264MM2Subsession.cpp
 LiveH264VideoDeviceSource.cpp
 LiveMediaSubsession.cpp
 LiveRtspServer.cpp
 LiveSourceTaskScheduler.cpp
 LiveSourceTaskScheduler0.cpp
 )
+
 SET(LMX_HEADERS
 LiveMediaExtPch.h
 ../../include/LiveMediaExt/LiveAACSubsession.h
@@ -56,6 +66,7 @@ LiveMediaExtPch.h
 ../../include/LiveMediaExt/LiveAMRSubsession.h
 ../../include/LiveMediaExt/LiveDeviceSource.h
 ../../include/LiveMediaExt/LiveH264Subsession.h
+#../../include/LiveMediaExt/LiveH264MM2Subsession.h
 ../../include/LiveMediaExt/LiveH264VideoDeviceSource.h
 ../../include/LiveMediaExt/LiveMediaSubsession.h
 ../../include/LiveMediaExt/LiveMediaSubsessionFactory.h
@@ -63,13 +74,7 @@ LiveMediaExtPch.h
 ../../include/LiveMediaExt/LiveSourceTaskScheduler.h
 ../../include/LiveMediaExt/LiveSourceTaskScheduler0.h
 )
-SET(MED_SRCS
-MediaTypes.cpp
-PacketManagerMediaChannel.cpp
-RtpTransmissionStats.cpp
-RtspService.cpp
-VirtualMediaSource.cpp
-)
+
 SET(MED_HEADERS
 ../../include/Media/AudioChannelDescriptor.h
 ../../include/Media/ChannelManager.h
@@ -81,6 +86,8 @@ SET(MED_HEADERS
 ../../include/Media/MediaSample.h
 ../../include/Media/MediaSampleStorageBuffer.h
 ../../include/Media/MediaTypes.h
+../../include/Media/MultiplexedMediaHeader.h
+../../include/Media/MultiMediaSampleBuffer.h
 ../../include/Media/PacketManagerMediaChannel.h
 ../../include/Media/RtpTransmissionStats.h
 ../../include/Media/RtspService.h
