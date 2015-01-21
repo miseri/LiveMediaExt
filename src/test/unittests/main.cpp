@@ -46,8 +46,8 @@ BOOST_AUTO_TEST_CASE (base_unit_test)
 BOOST_AUTO_TEST_CASE( tc1_MM_header_parse_write ) 
 {
   MultiplexedMediaHeader header(0);
-  uint32_t uiMM2FourCC = ' 2mm';
-  header.setFourCC(uiMM2FourCC);
+  uint32_t uiMMFFourCC = ' fmm';
+  header.setFourCC(uiMMFFourCC);
   header.addStreamLength(123);
   header.addStreamLength(246);
 
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE( tc1_MM_header_parse_write )
   boost::optional<MultiplexedMediaHeader> pHeader = MultiplexedMediaHeader::read(buffer, 13);
   BOOST_CHECK_EQUAL(pHeader.is_initialized(), true);
   BOOST_CHECK_EQUAL(pHeader->getHeaderLength(), 13);
-  BOOST_CHECK_EQUAL(pHeader->getFourCC(), uiMM2FourCC);
+  BOOST_CHECK_EQUAL(pHeader->getFourCC(), uiMMFFourCC);
   BOOST_CHECK_EQUAL(pHeader->getStreamCount(), 2);
   BOOST_CHECK_EQUAL(pHeader->getStreamLength(0), 123);
   BOOST_CHECK_EQUAL(pHeader->getStreamLength(1), 246);
